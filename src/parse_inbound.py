@@ -1,8 +1,8 @@
 """
-The Ouch Team
+The Ouch Team (Rayman)
 Utility module to parse inbound client messages 
 
-Use the parse and pack_message functions.
+Use the parse function to parse client messages into a dictionary.
 Scroll down to the main function to see tests.
 """
 

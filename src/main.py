@@ -1,9 +1,5 @@
-
-
-
 import time
 
-global curr_order_token
 
 class OrderBook:
     def __init__(self):
