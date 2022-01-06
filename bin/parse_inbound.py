@@ -1,6 +1,9 @@
 """
 The Ouch Team
 Utility module to parse inbound client messages 
+
+Use the parse and pack_message functions.
+Scroll down to the main function to see tests.
 """
 
 import struct
@@ -84,6 +87,11 @@ def parse_cancel_order(body):
     return msg_dict
 
 
+"""
+parse
+
+Use this function to parse bytes input from the TCP socket into the dictionary output.
+"""
 def parse(header, body):
     length = -1
     if header not in body_length_dict.keys():
