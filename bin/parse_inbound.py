@@ -18,33 +18,6 @@ body_length_dict = {
 
 
 def parse_enter_order(body):
-    """
-    message_dict = {
-        "message_type": (0, 1, 0), # (offest, length, type)
-        "order_token": (1, 4, 1),
-        "client_reference": (5, 10, 0),
-        "buy_sell_indicator": (15, 1, 0),
-        "quantity": (16, 4, 1),
-        "orderbook_id": (20, 4, 1),
-        "group": (24, 4, 0),
-        "price": (28, 4, 1),
-        "time_in_force": (32, 4, 1),
-        "firm_id": (36, 4, 1),
-        "display": (40, 1, 0),
-        "capacity": (41, 1, 0),
-        "minimum_quantity": (42, 4, 1),
-        "order_classification": (46, 1, 0),
-        "cash_margin_type": (47, 1, 0)
-    }
-
-    for name, info in message_dict.items():
-        offset = info[0]
-        length = info[1]
-        field_type = info[2]
-        if field_type == 0: # Alpha
-            message_dict[name] = body[offset:offset+length].decode(encoding='ascii')
-        elif field_type == 1: # Integer
-    """
     names = (
         "message_type",
         "order_token",
@@ -74,18 +47,6 @@ def parse_enter_order(body):
 
 
 def parse_replace_order(body):
-    """
-    message_dict = {
-        "message_type": (0, 1, 0),
-        "existing_order_token": (1, 4, 1),
-        "replacement_order_token": (5, 4, 1),
-        "quantity": (9, 4, 1),
-        "price": (13, 4, 1),
-        "time_in_force": (17, 4, 1),
-        "display": (21, 1, 0),
-        "minimum_quantity": (22, 4, 1)
-    }
-    """
     names = (
         "message_type",
         "existing_order_token",
@@ -108,13 +69,6 @@ def parse_replace_order(body):
 
 
 def parse_cancel_order(body):
-    """
-    message_dict = {
-        "message_type": (0, 1, 0),
-        "order_token": (1, 4, 1),
-        "quantity": (5, 4, 1)
-    }
-    """
     names = (
         "message_type",
         "order_token",
@@ -133,8 +87,7 @@ def parse_cancel_order(body):
 def parse(header, body):
     length = -1
     if header not in body_length_dict.keys():
-        print(f"Invalid header {header}")
-        return
+        raise Exception(f"Invalid header '{header}'")
     else:
         length = body_length_dict[header]
     
@@ -164,17 +117,17 @@ def pack_message(msg):
         format_s = "!cI10scIi4siIIccIcc"
     elif header == b'U':
         format_s = "!cIIIiIcI"
-    elif header != b'X':
+    elif header == b'X':
         format_s = "!cII"
     else:
-        print("Invalid Message Header")
-        return
+        raise Exception(f"Invalid header '{header}'")
     
     return struct.pack(format_s, *msg)
 
 
 # Testing inputs
 if __name__ == "__main__":
+    # Testing Place order
     vals = (
         b'O', 
         1234,
@@ -194,7 +147,42 @@ if __name__ == "__main__":
     )
 
     b = pack_message(vals)
-    msg_dict = parse(b'O', b[1:]) # Separate header byte from rest of the bytes.
+    msg_dict = parse(b[0:1], b[1:]) # Separate header byte from rest of the bytes.
+    print(json.dumps( # Make the dictionary easy to read
+        msg_dict,
+        indent = 4,
+        separators = (',', ': ')
+    ))
+
+    # Testing replace order
+    vals = (
+        b'U',
+        1234,
+        1235,
+        100000,
+        50005,
+        0,
+        b" ",
+        555
+    )
+
+    b = pack_message(vals)
+    msg_dict = parse(b[0:1], b[1:])
+    print(json.dumps( # Make the dictionary easy to read
+        msg_dict,
+        indent = 4,
+        separators = (',', ': ')
+    ))
+
+    # Testing Cancel Order
+    vals = (
+        b'X',
+        1234,
+        0
+    )
+
+    b = pack_message(vals)
+    msg_dict = parse(b[0:1], b[1:])
     print(json.dumps( # Make the dictionary easy to read
         msg_dict,
         indent = 4,
