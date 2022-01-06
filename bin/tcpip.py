@@ -3,9 +3,6 @@ The Ouch Team
 TCP/IP Input Receiver
 """
 
-from bin.common import common
-
-
 class receiver:
 
     # imports
