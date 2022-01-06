@@ -171,7 +171,7 @@ class OrderBook:
             self.output_accepted(order_message)
 
             # increase the current order token number to match
-            curr_order_token += 1
+            self.curr_order_token += 1
 
             self.token_valid.append(True)
 
@@ -201,7 +201,7 @@ class OrderBook:
                         order_level.pop(i) # remove original from order book
 
             # increase the current order token number to match new order token number
-            curr_order_token += 1
+            self.curr_order_token += 1
 
             self.token_valid.append(True)
             self.token_valid[existing_order_token] = False
