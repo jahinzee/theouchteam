@@ -6,8 +6,10 @@ Use the parse function to parse client messages into a dictionary.
 Scroll down to the main function to see tests.
 """
 
-import struct
 import json
+import struct
+
+from util import Util
 
 
 body_length_dict = {
@@ -63,7 +65,7 @@ def parse_replace_order(body):
     format_s = "!IIIiIcI"
     fields = ('U',) + struct.unpack(format_s, body)
     msg_dict = dict(zip(names, fields))
-    msg_dict ["price"] /= 10
+    msg_dict["price"] /= 10
     for key in msg_dict.keys():
         if isinstance(msg_dict[key], bytes):
             msg_dict[key] = msg_dict[key].decode("ascii").strip()
@@ -109,30 +111,6 @@ def parse(header, body):
     return message_dict
 
 
-"""
-pack_message
-
-Message should be a tuple with fields in the order defined in the
-Japannext OUCH Trading Specification.
-
-The price field should an integer, calculated using the formula price_field = int(price*10).
-Alpha fields should be a bytes object representing a string or character i.e: Use b'Python' instead of 'Python' 
-"""
-def pack_message(msg):
-    header = msg[0]
-    format_s = None
-    if header == b'O':
-        format_s = "!cI10scIi4siIIccIcc"
-    elif header == b'U':
-        format_s = "!cIIIiIcI"
-    elif header == b'X':
-        format_s = "!cII"
-    else:
-        raise Exception(f"Invalid header '{header}'")
-    
-    return struct.pack(format_s, *msg)
-
-
 # Testing inputs
 if __name__ == "__main__":
     # Testing Place order
@@ -154,7 +132,7 @@ if __name__ == "__main__":
         b'1'
     )
 
-    b = pack_message(vals)
+    b = Util.package_inbound(vals)
     msg_dict = parse(b[0:1], b[1:]) # Separate header byte from rest of the bytes.
     print(json.dumps( # Make the dictionary easy to read
         msg_dict,
@@ -174,7 +152,7 @@ if __name__ == "__main__":
         555
     )
 
-    b = pack_message(vals)
+    b = Util.package_inbound(vals)
     msg_dict = parse(b[0:1], b[1:])
     print(json.dumps( # Make the dictionary easy to read
         msg_dict,
@@ -189,7 +167,7 @@ if __name__ == "__main__":
         0
     )
 
-    b = pack_message(vals)
+    b = Util.package_inbound(vals)
     msg_dict = parse(b[0:1], b[1:])
     print(json.dumps( # Make the dictionary easy to read
         msg_dict,
