@@ -1,2 +1,3 @@
-# theouchteam
-The Ouch Team, for GDA Fund Hackathon 2021/2022
+# The OUCH Project - OUCH Server/Client
+
+tbd :)
