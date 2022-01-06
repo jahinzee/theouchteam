@@ -16,9 +16,9 @@ class receiver:
 
     # class constant: Store the expected length of each type of message (minus the header byte), along with appropriate header byte
     bodyLengthDict = {
-        b'O' : 48,
-        b'U' : 26,
-        b'X' : 9
+        b'O' : 47,
+        b'U' : 25,
+        b'X' : 8
     }
 
     """
