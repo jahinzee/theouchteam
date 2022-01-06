@@ -75,8 +75,7 @@ class Exchange():
                 
                 success, orderbook_msg = self.orderbook.handle_order(client_id, content)
                 if msg_type == 'U' and success:
-                    if success:
-                        self.client_tokens[client_id] = content["replacement_order_token"]
+                    self.client_tokens[client_id] = content["replacement_order_token"]
                 self.connection_manager.send_message(client_id, Util.package_outbound(orderbook_msg))
                 
 
