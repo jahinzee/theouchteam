@@ -1,6 +1,19 @@
 """
 The Ouch Team
 TCP/IP Input Receiver
+
+Use with, uh, "with" block, similar to how its used in file manipulation:
+
+>>> with receiver() as r:
+...     r.getBytestream()
+...     # insert code here
+
+With this, excess port bandwidth is not taken up, as connection cleanly closes once it is out of scope.
+
+
+
+THERE IS PROBABLY BUGS IN THIS :(
+
 """
 
 import socket
@@ -9,7 +22,7 @@ import common
 # global variable: address + port
 defaultAddress = ('localhost', 1007)
 
-class dem:
+class receiver:
     
      # class constant: Prepare socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -23,12 +36,11 @@ class dem:
 
     """
     enter: (*address, *port)
-    - add custom address and port values (optional; not validated)
     """
-    def __enter__ (self, address = defaultAddress[0], port = defaultAddress[1]) -> None:
+    def __enter__ (self) -> None:
 
         # Prepare!.. t h e   s o c k
-        self.sock.bind(address, port)
+        self.sock.bind(defaultAddress)
         self.sock.listen(1)
         self.connection, self.client = self.sock.accept()
         
@@ -64,7 +76,7 @@ class dem:
         self.connection.close()
 
     
-class mo:
+class sender:
 
     # class constant: Prepare socket variable
     socket = None
@@ -81,13 +93,12 @@ class mo:
     }
     
     """
-    enter: (*address, *port)
-    - add custom address and port values (optional; not validated)
+    enter:
     """
-    def __enter__(self, address = defaultAddress[0], port = defaultAddress[1]) -> None:
+    def __enter__(self) -> None:
 
         # Prepare!.. t h e   s o c k   I I
-        self.sock = socket.create_connection((address, port))
+        self.sock = socket.create_connection(defaultAddress)
     
     """
     sendBytestream(bytearray: header, bytearray: body)
