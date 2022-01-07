@@ -14,6 +14,7 @@ from parse_inbound import pack_message, parse
 from tcpip.receiver import receiver
 from util import Util
 
+
 class Exchange():
     PRICE_MAX = 214748364.6
     QUANTITY_MAX = 2147483647 

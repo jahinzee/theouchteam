@@ -44,7 +44,7 @@ class OrderBook:
     def get_book(self):
         return self.order_book
 
-    def handle_order(self, client_id: int, res: dict) -> (bool, dict):
+    def handle_order(self, client_id: int, parsed_message: dict) -> (bool, dict):
         """
         This is the handler function to handle all incoming streams (res)
         It returns the outbound message required to send back to client and whether order was successful
@@ -52,18 +52,18 @@ class OrderBook:
 
         success, outbound = None, None
 
-        message_type = res['message_type']
+        message_type = parsed_message['message_type']
 
-        order_id = self.get_order_id(client_id, res)
+        order_id = self.get_order_id(client_id, parsed_message)
 
         if message_type == "O":
-            success, outbound = self.handle_enter(res, client_id, order_id)
+            success, outbound = self.handle_enter(parsed_message, client_id, order_id)
 
         elif message_type == "U":
-            success, outbound = self.handle_replace(res, client_id, order_id)
+            success, outbound = self.handle_replace(parsed_message, client_id, order_id)
 
         elif message_type == "X":
-            success, outbound = self.handle_cancel(res, client_id, order_id)
+            success, outbound = self.handle_cancel(parsed_message, client_id, order_id)
 
         else:
             print("message type error")
