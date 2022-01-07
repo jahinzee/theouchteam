@@ -1,5 +1,5 @@
 import time
-
+from util import Util
 
 class OrderBook:
     PRICE_MAX = 214748364.6
@@ -71,38 +71,86 @@ class OrderBook:
         return success, outbound
 
     def test(self):
+        # testing = [[{
+        #     'message_type': 'O',
+        #     'order_token': 0,
+        #     'indicator': 'B',
+        #     'quantity': 200,
+        #     'orderbook_id': 3,
+        #     'price': 323.4,
+        #     'time_in_force': 100,
+        #     'display': "h"
+        # },0], [{
+        #     'message_type': 'U',
+        #     'existing_order_token': 0,
+        #     'replacement_order_token': 1,
+        #     'quantity': 5000,
+        #     'orderbook_id': 3,
+        #     'price': 323.4,
+        #     'time_in_force': 100
+        # }, 0], [{
+        #     'message_type': 'O',
+        #     'order_token': 2,
+        #     'indicator': 'B',
+        #     'quantity': 300,
+        #     'orderbook_id': 3,
+        #     'price': 325.4,
+        #     'time_in_force': 100,
+        #     'display': "h"
+        # },0],  [{
+        #     'message_type': 'O',
+        #     'order_token': 2,
+        #     'indicator': 'B',
+        #     'quantity': 500,
+        #     'orderbook_id': 3,
+        #     'price': 327.4,
+        #     'time_in_force': 100,
+        #     'display': "h"
+        # },1],
+        #     [{
+        #     'message_type': 'U',
+        #     'existing_order_token': 1,
+        #     'replacement_order_token': 3,
+        #     'quantity': 5000,
+        #     'orderbook_id': 3,
+        #     'price': 323.4,
+        #     'time_in_force': 100
+        # }, 0],[{
+        #     'message_type': 'X',
+        #     'order_token': 2,
+        #     'quantity': None
+        # },0],
+        #
+        # ]
+
         testing = [[{
             'message_type': 'O',
             'order_token': 0,
+            'client_reference': 'abcdefghij',
             'indicator': 'B',
             'quantity': 200,
+            'orderbook_id': 3,
+            'group': "DAY",
             'price': 323.4,
             'time_in_force': 100,
-            'display': "h"
-        },0], [{
+            'firm_id': '3434',
+            'display': "P",
+            'capacity': 'A',
+            'minimum_quantity': 5,
+            'order_classification': '1',
+            'cash_margin_type': '3'
+        },0],  [{
             'message_type': 'U',
             'existing_order_token': 0,
             'replacement_order_token': 1,
             'quantity': 5000,
             'price': 323.4,
-            'time_in_force': 100
-        }, 1], [{
-            'message_type': 'O',
-            'order_token': 1,
-            'indicator': 'B',
-            'quantity': 300,
-            'price': 323.4,
             'time_in_force': 100,
-            'display': "h"
-        },0], [{
-            'message_type': 'U',
-            'existing_order_token': 0,
-            'replacement_order_token': 2,
-            'quantity': 5000,
-            'price': 323.4,
-            'time_in_force': 100
+            'display': 'P',
+            'minimum_quantity': 23
         }, 0]
         ]
+
 
         for res in testing:
 
@@ -136,12 +184,12 @@ class OrderBook:
             # print(self.token_valid)
             # print("next")
 
-    def input_order(self, indicator, quantity, price, time_in_force, time_received, order_id, order_token):
+    def input_order(self, indicator, quantity, orderbook_id, price, time_in_force, time_received, order_id, order_token):
         if price not in self.order_book:
-            self.order_book[price] = [[indicator, price, quantity, time_in_force, time_received, order_id, order_token]]
+            self.order_book[price] = [[indicator, price, quantity, orderbook_id, time_in_force, time_received, order_id, order_token]]
         else:
             # if price is already in order book
-            self.order_book[price].append([indicator, price, quantity, time_in_force, time_received, order_id, order_token])
+            self.order_book[price].append([indicator, price, quantity, orderbook_id, time_in_force, time_received, order_id, order_token])
 
     def get_message_type(self, res):
         return {}
@@ -155,66 +203,73 @@ class OrderBook:
     def parse_cancel_message(self, res):
         return {}
 
-    def check_order_valid(self, order_message):
+    def check_enter_valid(self, order_message, client_id, order_token):
 
-        #Rayman's code
-        # success = True
-        # err_code = ""
-        #
-        # if content["orderbook_id"] > 9999:
-        #     err_code = "S"
-        #
-        # elif content["price"] > self.PRICE_MAX:
-        #     err_code = "X"
-        #
-        # elif content["quantity"] > self.QUANTITY_MAX:
-        #     err_code = "Z"
-        #
-        # elif content["minimum_quantity"] > 0 and content["time_in_force"] == 0:
-        #     err_code = "N"
-        #
-        # elif content["buy_sell_indicator"] not in ("B", "S", "T", "E") or \
-        #         content["order_classicification"] not in ("1", "3", "4", "5", "6") or \
-        #         content["time_in_force"] not in (0, 99999):
-        #     err_code = "Y"
-        #
-        # elif content["display"] not in ("P", ""):
-        #     err_code = "D"
-        #
-        # elif content["cash_margin_type"] not in ("1", "2", "3", "4", "5"):
-        #     err_code = "G"
+        success = False
+        err_code = ""
 
-        # checks whether invalid quantity:
-        success = True
-        rejected_reasons = ""
-
-        if order_message['quantity'] == 0:
-
-            rejected_reasons = "Z"
-
+        # check whether order_token is not valid
+        if order_token != self.curr_order_token[client_id] + 1:
+            # Out of sequence token
+            # Token out of sequence will be silently ignored
             success = False
+            err = "O"
 
-        # check whether invalid display
-        elif order_message['display'] == "":
-            rejected_reasons = "D"
-            success = False
 
-        # check whether invalid order price
-        elif order_message['price'] <= 0:
-            rejected_reasons = "X"
-            success = False
+        elif order_message["orderbook_id"] > 9999 or order_message["orderbook_id"] < 0:
+            err_code = "S"
 
-        elif order_message['indicator'] != 'B' and order_message['indicator'] != 'S':
-            rejected_reasons = "Y"
-            success = False
+        elif order_message["price"] > self.PRICE_MAX or order_message["price"] <= 0:
+            err_code = "X"
 
-        return success, rejected_reasons
+        elif order_message["quantity"] > self.QUANTITY_MAX or order_message["quantity"] <= 0:
+            err_code = "Z"
+
+        elif order_message["minimum_quantity"] > 0 and order_message["time_in_force"] == 0:
+            err_code = "N"
+
+        elif order_message["indicator"] not in ("B", "S", "T", "E") or order_message["order_classification"] not in ("1","2","3","4","5","6"):
+            err_code = "Y"
+
+        elif order_message["display"] not in ("P", ""):
+            err_code = "D"
+
+        elif order_message["cash_margin_type"] not in ("1","2","3","4","5"):
+            err_code = "G"
+        else:
+            success = True
+
+        return success, err_code
+
+    def check_replace_valid(self, order_message):
+        success = False
+        err_code = ""
+
+        if order_message["price"] > self.PRICE_MAX or order_message["price"] <= 0:
+            err_code = "X"
+
+        elif order_message["quantity"] > self.QUANTITY_MAX or order_message["quantity"] <= 0:
+            err_code = "Z"
+
+        elif order_message["minimum_quantity"] > 0 and order_message["time_in_force"] == 0:
+            err_code = "N"
+
+        elif order_message["display"] not in ("P", ""):
+            err_code = "D"
+
+        else:
+            success = True
+
+        return success, err_code
+
 
     def handle_enter(self, order_message, client_id, order_id):
         # to check if successful
         order_token = order_message['order_token']
 
         indicator = order_message['indicator']
+
+        orderbook_id = order_message['orderbook_id']
 
         quantity = order_message['quantity']
 
@@ -225,39 +280,31 @@ class OrderBook:
         time_received = time.time()
 
         if client_id not in self.curr_order_token:
-            #check whether you have to initialise curr_order_token for that specific client
+            # check whether you have to initialise curr_order_token for that specific client
             self.curr_order_token[client_id] = -1
 
         if client_id not in self.token_valid:
             self.token_valid[client_id] = []
 
-        # check whether order_token is not valid
-        if order_token != self.curr_order_token[client_id] + 1:
-            # Out of sequence token
-            # Token out of sequence will be silently ignored
-            success = False
-            outbound = "invalid order token"
+
+        #check whether the order information is valid
+        success, rejected_reasons = self.check_enter_valid(order_message, client_id, order_token)
+
+        if success:
+            self.input_order(indicator, quantity, orderbook_id, price, time_in_force, time_received, order_id, order_token)
+
+            # calls function to output a successful response
+            outbound = self.output_accepted(order_message)
+
+            # increase the current order token number to match
+            self.curr_order_token[client_id] += 1
+
+            self.token_valid[client_id].append(True)
 
         else:
+            # if invalid
 
-            #check whether the order information is valid
-            success, rejected_reasons = self.check_order_valid(order_message)
-
-            if success:
-                self.input_order(indicator, quantity, price, time_in_force, time_received, order_id, order_token)
-
-                # calls function to output a successful response
-                outbound = self.output_accepted(order_message)
-
-                # increase the current order token number to match
-                self.curr_order_token[client_id] += 1
-
-                self.token_valid[client_id].append(True)
-
-            else:
-                # if invalid
-
-                outbound = self.output_rejected(order_message, rejected_reasons)
+            outbound = self.output_rejected(order_message, rejected_reasons)
 
         return success, outbound
 
@@ -270,7 +317,8 @@ class OrderBook:
         time_received = time.time()
 
         if client_id in self.curr_order_token and existing_order_token >= 0 and existing_order_token <= self.curr_order_token[client_id] and replacement_order_token == self.curr_order_token[client_id] + 1 and \
-                self.token_valid[client_id][existing_order_token] == True:
+            self.token_valid[client_id][existing_order_token] == True:
+            checkValid = False
 
             for order_level in self.order_book.values():
                 for i, order in enumerate(order_level):
@@ -278,27 +326,41 @@ class OrderBook:
                     if order[-1] == existing_order_token and order[-2] == hash(str(client_id) + str(existing_order_token)):
                         #nb reason why i didn't use the self.get_order_id function is becasue that function takes replacement_order_token, but we are checking existing
 
-
+                        checkValid = True
                         indicator = order[0]
+                        orderbook_id = order[3]
                         order_level.pop(i)  # remove original from order book
 
-            # increase the current order token number to match new order token number
-            self.curr_order_token[client_id] += 1
 
-            self.token_valid[client_id].append(True)
-            self.token_valid[client_id][existing_order_token] = False
+            success, rejected_reasons = self.check_replace_valid(replace_message)
 
-            if price not in self.order_book:
-                self.order_book[price] = [
-                    [indicator, price, quantity, time_in_force, time_received, order_id, replacement_order_token]]
+            if checkValid == False:
+                #i.e. happens in very rare scenarios where tokens match up but different client_id
+                print("!!!")
+                success = False
+                outbound = output_rejected(replace_message, "O")
+
+            elif success == False:
+                outbound = output_rejected(replace_message, "rejected_reasons")
+
             else:
-                # if price is already in order book
-                self.order_book[price].append(
-                    [indicator, price, quantity, time_in_force, time_received, order_id, replacement_order_token])
+                # increase the current order token number to match new order token number
+                self.curr_order_token[client_id] += 1
 
-            outbound = self.output_replaced(replace_message)
+                self.token_valid[client_id].append(True)
+                self.token_valid[client_id][existing_order_token] = False
 
-            success = True
+                if price not in self.order_book:
+                    self.order_book[price] = [
+                        [indicator, price, quantity, orderbook_id, time_in_force, time_received, order_id, replacement_order_token]]
+                else:
+                    # if price is already in order book
+                    self.order_book[price].append(
+                        [indicator, price, quantity, orderbook_id, time_in_force, time_received, order_id, replacement_order_token])
+
+                outbound = self.output_replaced(replace_message)
+
+                success = True
 
         else:
             # if not valid order_token and/or replacement_order_token
@@ -306,16 +368,20 @@ class OrderBook:
 
             outbound = {} # <----- not sure if this is appropriate. Can't find correct response for invalid replace
 
+
         return success, outbound
+
+
 
     def handle_cancel(self, cancel_message, client_id, order_id):
         order_token = cancel_message['order_token']
+
         if client_id in self.token_valid and self.token_valid[client_id][order_token]:
             # i.e. if specific order has not been cancelled or replaced
             for order_level in self.order_book.values():
                 for i, order in enumerate(order_level):
                     # loop through each order to find matching order_token
-                    if order[-1] == order_token and order[-2] == order_id:
+                    if order[-1] == order_token and order[-2] == order_id and order[-2] == self.get_order_id(client_id, cancel_message):
                         quantity = order[2]
                         order_level.pop(i)  # remove original from order book
                         self.token_valid[client_id][order_token] = False
