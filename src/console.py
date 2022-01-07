@@ -16,7 +16,7 @@ from tabulate import tabulate
 class Console:
 
     # class constant: default cmd window size (for supported platforms)
-    WINDOW_SIZE = [110, 30]
+    WINDOW_SIZE = [110, 60]
 
     # class constants: helper vars
     TAB = '\t'

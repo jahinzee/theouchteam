@@ -10,13 +10,6 @@ class Util():
     Contains utility methods for retrieving the server time, packaging outbound messages into
     bytes and unpackaging inbound messages into dictionaries according to the OUCH protocol.
     """
-
-    @staticmethod
-    def get_orderbook_id_dict():
-        orderbook_ids = {
-
-        } 
-
     @staticmethod
     def get_server_time():
         """
@@ -44,14 +37,22 @@ class Util():
             format_s = "!cI10scII4sIIIccIcc"
             package[7] = int(package[7]*10) # Convert decimal price to integer
         elif header == b'U':
-            format_s = "!cIIIIIcI"
-            package[4] = int(package[4]*10) # Convert decimal price to integer
+            if len(package) == 14:
+                package[8] = int(package[8]*10) # Convert decimal price to integer
+                format_s = "!cQIcII4sIIcQIcI"
+            else:
+                package[4] = int(package[4]*10) # Convert decimal price to integer
+                format_s = "!cIIIIIcI"
         elif header == b'X':
             format_s = "!cII"
         elif header == b"S": # Server event
             format_s = "!cQc" 
         elif header == b"J": # Order rejected
-            format_s = "!!cQIc"
+            format_s = "!cQIc"
+        elif header == b'A': # Order Accepted
+            format_s = "!cQI10scII4sIIIccQIccc"
+        elif header == b'C': # Order Cancelled
+            format_s = "!cQIIc"
         else:
             raise Exception(f"Unsupported message type '{header}'")
         package = tuple(package) 
@@ -70,19 +71,25 @@ class Util():
         """
         
         message_dict = None 
-        if header == b'O' or header == 'O':
+        if header == b'O': # Place Order
             message_dict = Util._unpackage_enter_order(body)
-        elif header == b'U' or header == 'U':
-            if len(body) == 25:
+        elif header == b'U':
+            if len(body) == 25: # Replace Order
                 message_dict = Util._unpackage_replace_order(body)
-            else:
+            elif len(body) == 51: # Order Replaced
                 message_dict = Util._unpackage_replace_message(body)
-        elif header == b'X' or header == 'X':
+            else:
+                raise Exception(f"Unsupported replace order length {len(body)}")
+        elif header == b'X': # Cancel Order
             message_dict = Util._unpackage_cancel_order(body)
-        elif header == b'S' or header == 'S': # System Event
+        elif header == b'S': # System Event
             message_dict = Util._unpackage_system_message(body)
-        elif header == b'J' or header == 'J':
+        elif header == b'J': # Order Rejected
             message_dict = Util._unpackage_order_rejected(body)
+        elif header == b'A': # Order Accepted
+            message_dict = Util._unpackage_order_accepted(body)
+        elif header == b'C': # Order Cancelled
+            message_dict = Util._unpackage_order_cancelled(body)
         else:
             raise Exception(f"Unsupported message type '{header}'")
 
@@ -185,8 +192,47 @@ class Util():
             "order_token",
             "order_rejected_reason"
         )
-        format_s = "!cQIc"
+        format_s = "!QIc"
         msg_dict = Util._unpackage(names, body, format_s, 'S')
+        return msg_dict
+    
+    @staticmethod
+    def _unpackage_order_accepted(body: bytes):
+        names = (
+            "message_type",
+            "timestamp",
+            "order_token",
+            "client_reference",
+            "buy_sell_indicator",
+            "quantity",
+            "orderbook_id",
+            "group",
+            "price",
+            "time_in_force",
+            "firm_id",
+            "display",
+            "capacity",
+            "order_number",
+            "minimum_quantity",
+            "order_state",
+            "order_classification",
+            "cash_margin_type"
+        )
+        format_s = "!QI10scII4sIIIccQIccc"
+        msg_dict = Util._unpackage(names, body, format_s, 'A')
+        return msg_dict
+
+    @staticmethod
+    def _unpackage_order_cancelled(body: bytes):
+        names = (
+            "message_type",
+            "timestamp",
+            "order_token",
+            "decrement_quantity",
+            "order_cancelled_reason"
+        )
+        format_s = "!QIIc"
+        msg_dict = Util._unpackage(names, body, format_s, 'C')
         return msg_dict
 
     @staticmethod
@@ -204,5 +250,7 @@ class Util():
         for key in msg_dict.keys():
             if isinstance(msg_dict[key], bytes):
                 msg_dict[key] = msg_dict[key].decode("ascii").strip()
+            if msg_dict[key] == "":
+                msg_dict[key] = " "
         
         return msg_dict

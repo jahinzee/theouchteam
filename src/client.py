@@ -5,6 +5,7 @@ Client
 
 Client for connecting to the receiver.
 """
+import sys
 import socket
 import threading
 from queue import Queue
@@ -37,7 +38,7 @@ class Client():
         b'C' : 17,  # CANCELLED
         b'D' : 26,  # AIQ CANCELLED
         b'E' : 29,  # EXECUTED
-        b'J' : 12,  # REJECTED
+        b'J' : 13,  # REJECTED
     }
     
     def __enter__(self) -> None:
@@ -45,7 +46,7 @@ class Client():
         # Prepare!.. t h e   s o c k   I I
         self.socket = self._connect()
     
-    def __init__(self):
+    def __init__(self, path=None):
         """
         Prepare the client connection.
         """
@@ -67,33 +68,31 @@ class Client():
         self.listener.start()
 
         # Take and parse user input, then send to the exchange.
+        actions = []
+        if path != None:
+            with open(path, "r") as json_f:
+                data = json.load(json_f)
+                for action in data["actions"]:
+                    actions.append(list(action.values()))
         while True:
             try:
-                input()
-                # Test Order
-                vals = [
-                    b'O', 
-                    1234,
-                    b"Claire    ", # This must be 10 characters. Fill the unused characters with spaces.
-                    b'B',
-                    345624,
-                    1234,
-                    b"DAY ", # This must be 4 characters.
-                    5000005, # Price  = $500000.5
-                    99999,
-                    5834,
-                    b"P",
-                    b"P",
-                    1234,
-                    b'1',
-                    b'1'
-                ]
-                package = Util.package(vals)
+                if len(actions) == 0:
+                    package = user_input()
+                else:
+                    action = actions.pop(0)
+                    package = Util.package(action)
                 self._sendBytestream(package[0:1], package[1:])
+                input()
             except KeyboardInterrupt:
                 self.terminated.set()
-                print("Client Main Thread Terminating")
+                print("Client Main Thread Interrupted")
                 break
+            except ConnectionResetError:
+                print("Server Disconnected")
+                break
+    
+    def user_input(self):
+        pass
     
     def _listen_thread(self):
         while not self.terminated.is_set():
@@ -138,7 +137,7 @@ class Client():
             raise ValueError(f"Invalid header byte {header}")
         
         # Catch illegal length
-        if body_length != len(body):
+        if body_length != len(body) and header != b'U':
             raise ValueError(f"Illegal length {body_length} for header '{header}'")
 
         # Join header and body
@@ -156,4 +155,8 @@ class Client():
         self.socket.close()
 
 if __name__ == "__main__":
-    Client()
+    if len(sys.argv) == 2:
+        orderlist_path = sys.argv[1]
+    else:
+        orderlist_path = None
+    Client(path=orderlist_path)

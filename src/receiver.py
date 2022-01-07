@@ -38,7 +38,7 @@ class Receiver():
         b'C' : 17,  # CANCELLED
         b'D' : 26,  # AIQ CANCELLED
         b'E' : 29,  # EXECUTED
-        b'J' : 12,  # REJECTED
+        b'J' : 13,  # REJECTED
     }
 
     def __init__(self):
@@ -158,7 +158,7 @@ class Receiver():
                         "header": header,
                         "body": body
                     })
-            except OSError:
+            except Exception:
                 print(f"Connection of client_id {client_id} dropped.")
                 break
 

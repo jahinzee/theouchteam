@@ -19,7 +19,7 @@ These values contain critical information, and should not be modified manually.
     - `BTC` : Bitcoin
     - `ETH` : Ethereum
     - `LTC` : LiteCoin
-    - `BNB` : Binance
+    - `FTM` : Fantom
 
 - **Column 4:** Price + Side:
   - Quantity is indicated by absolute value, Side is indicated by sign

@@ -27,7 +27,7 @@ class Exchange():
         the Orderbook to the console once every second.
         """
         # Exchange state variables
-        self.open = False
+        self.open = True
 
         # Connection receiver
         self.connection_manager = Receiver()
@@ -35,9 +35,9 @@ class Exchange():
 
         # Orderbook
         self.orderbook = OrderBook()
-        self.client_tokens = {}
 
         # Outputting orderbook once per second, change to silent-mode later.
+        self.print_dict = threading.Event()
         self.printer = threading.Thread(name="printer", target=lambda: self._print_orderbook_thread(), daemon=True)
         self.printer.start()
 
@@ -54,12 +54,12 @@ class Exchange():
     
     def print_orderbook(self):
         """Prints the Orderbook to the console in a nice format."""
-        # Console(loadfrom=self.orderbook.get_book()).print()
-        print(json.dumps(
-            self.orderbook.get_book(),
-            indent=4,
-            separators=(",", ": ")
-        ))
+        Console(loadfrom=self.orderbook.get_book()).print()
+        """
+        self.print_dict.clear()
+        self.orderbook.debug()
+        self.print_dict.wait()
+        """
     
     def _operate(self):
         """
@@ -86,11 +86,9 @@ class Exchange():
                 # Parse message if it's not a connection.
                 client_id = msg["id"]
                 content = Util.unpackage(msg["header"], msg["body"])
-                if client_id not in self.client_tokens.keys():
-                    self.client_tokens[client_id] = 0 # Assume that client tokens increment from 1
 
                 # Validate order fields according to the OUCH protocol.
-                valid = self._validate_order(content, client_id)
+                valid, outbound = self._validate_order_syntax(content, client_id)
 
                 msg_type = content["message_type"]
                 if not valid:
@@ -103,22 +101,22 @@ class Exchange():
                             "order_token": content["existing_order_token"],
                             "quantity": content["quantity"]
                         }
-                    else:
-                        return
+                        valid = True
                 
                 # Pass valid order into the orderbook
-                success, orderbook_msg = self.orderbook.handle_order(client_id, content)
+                if valid:
+                    success, outbound = self.orderbook.handle_order(client_id, content)
+
+                if len(outbound) == 0: 
+                    self.print_dict.set()
+                    continue
 
                 # Send outbound message back to client.
-                if msg_type == 'U' and success:
-                    self.client_tokens[client_id] = content["replacement_order_token"]
-                elif msg_type in ('U', 'X') and not success:
-                    continue
-                print(orderbook_msg)
-                self.connection_manager.send_message(client_id, Util.package(orderbook_msg))
+                self.connection_manager.send_message(client_id, Util.package(outbound))
+            self.print_dict.set()
                 
 
-    def _validate_order(self, content: dict, client_id: int) -> bool:
+    def _validate_order_syntax(self, content: dict, client_id: int) -> (bool, list):
         """
         Validates the formatting of the order from a specfic client.
 
@@ -128,36 +126,49 @@ class Exchange():
         """
         msg_type = content["message_type"]
         err_code = None
-        # If order placement
+        outbound = []
         if msg_type == 'O':
             # Checking Error rejected reasons in Table 3 Section 7.7.
             # Not Implemented: H, V, i, R, F, L, C, O
-            if content["order_token"] <= self.client_tokens[client_id]:
-                return False
-            elif content["orderbook_id"] > 9999:
+            if content["orderbook_id"] > 3 or content["orderbook_id"] < 0:
                 err_code = "S"
             elif content["price"] > self.PRICE_MAX:
                 err_code = "X"
             elif content["quantity"] > self.QUANTITY_MAX:
                 err_code = "Z"
-            elif content["minimum_quantity"] > 0 and content["time_in_force"] == 0:
+            elif content["minimum_quantity"] > 0 and content["time_in_force"] != 0:
                 err_code = "N"
             elif content["buy_sell_indicator"] not in ("B", "S", "T", "E") or \
                     content["order_classification"] not in ("1", "3", "4", "5", "6") or \
                     content["time_in_force"] not in (0, 99999):
                 err_code = "Y"
-            elif content["display"] not in ("P", ""):
+            elif content["display"] not in ("P", " "):
                 err_code = "D"
             elif content["cash_margin_type"] not in ("1", "2", "3", "4", "5"):
                 err_code = "G"
             else:
-                return True
+                return True, outbound
             outbound = ["J", Util.get_server_time(), content["order_token"], err_code]
-            self.connection_manager.send_message(client_id, Util.package(outbound))
-            return False
+            return False, outbound
         elif msg_type == 'U':
-            if content["replacement_order_token"] <= self.client_tokens[client_id]:
-                return False
+            if content["price"] > self.PRICE_MAX:
+                err_code = "X"
+            elif content["quantity"] > self.QUANTITY_MAX:
+                err_code = "Z"
+            elif content["minimum_quantity"] > 0 and content["time_in_force"] != 0:
+                err_code = "N"
+            elif content["time_in_force"] not in (0, 99999):
+                err_code = "Y"
+            elif content["display"] not in ("P", " "):
+                err_code = "D"
+            else:
+                return True, outbound
+            return False, outbound
+        elif msg_type == 'X':
+            return True, outbound
+        else:
+            raise ValueError(f"Invalid header detected in Exchange validation.")
+
 
     def _handle_signal(self):
         """Handler which dumps the orderbook into a csv file when SIGUSR1 or SIGILL is caught in silent mode."""
