@@ -19,7 +19,6 @@ with the exchange.
 ##
 """
 import socket
-import common
 import threading
 from queue import Queue
 
