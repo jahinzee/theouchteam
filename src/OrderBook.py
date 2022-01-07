@@ -111,25 +111,32 @@ class OrderBook:
             'message_type': 'X',
             'order_token': 1,
             'quantity': None
-        },0],[{
+        },0], [{
             'message_type': 'O',
-            'order_token': 0,
+            'order_token': 2,
             'indicator': 'B',
             'quantity': 200,
-            'price': 325.4,
+            'price': 328.4,
             'time_in_force': 100,
             'display': "h"
-        },1], [{
-            'message_type': 'X',
-            'order_token': 0,
-            'quantity': None
-        },1]
+        },0], [{
+            'message_type': 'O',
+            'order_token': 3,
+            'indicator': 'B',
+            'quantity': 200,
+            'price': 328.4,
+            'time_in_force': 100,
+            'display': "h"
+        },0],
         ]
+
+
 
         for res in testing:
 
             success, outbound = self.handle_order(res[1], res[0])
             print("--------")
+            print(res[1])
             print(success, outbound)
             print(self.order_book)
             print(self.token_valid)
@@ -280,7 +287,6 @@ class OrderBook:
 
         if existing_order_token >= 0 and existing_order_token <= self.curr_order_token[client_id] and replacement_order_token == self.curr_order_token[client_id] + 1 and \
                 self.token_valid[client_id][existing_order_token] == True:
-            self.curr_order_token[client_id] = replacement_order_token
 
             for order_level in self.order_book.values():
                 for i, order in enumerate(order_level):
@@ -328,6 +334,7 @@ class OrderBook:
                     if order[-1] == order_token and order[-2] == orderbook_id:
                         quantity = order[2]
                         order_level.pop(i)  # remove original from order book
+                        self.token_valid[client_id][order_token] = False
 
             outbound = self.output_cancelled(cancel_message, 'U', quantity)
             success = True
