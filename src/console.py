@@ -119,5 +119,3 @@ class Console:
 
         # Print!
         print(tabulate(singleTable, headers = ["Indicator", "Price", "Quantity", "Orderbook ID", "Time in Force", "Time Received", "Order ID", "Order Token"]))    
-
-c = Console().print()
