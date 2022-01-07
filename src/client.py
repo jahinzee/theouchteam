@@ -46,6 +46,9 @@ class Client():
         # Prepare!.. t h e   s o c k   I I
         self.socket = self._connect()
     
+    def user_input(self):
+        pass
+
     def __init__(self, path=None):
         """
         Prepare the client connection.
@@ -77,7 +80,7 @@ class Client():
         while True:
             try:
                 if len(actions) == 0:
-                    package = user_input()
+                    package = self.user_input()
                 else:
                     action = actions.pop(0)
                     package = Util.package(action)
@@ -91,8 +94,7 @@ class Client():
                 print("Server Disconnected")
                 break
     
-    def user_input(self):
-        pass
+
     
     def _listen_thread(self):
         while not self.terminated.is_set():
@@ -108,7 +110,7 @@ class Client():
             separators = (",", ": ")
         ))
 
-    def _receive_bytes(self) -> (bytes, bytes):
+    def _receive_bytes(self):
         # Store header byte
         header = self.socket.recv(1)
 
