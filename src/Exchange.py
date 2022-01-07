@@ -9,9 +9,10 @@ import threading
 import time
 import json
 
-from OrderBook import OrderBook
-from tcpip.receiver import receiver
+from orderbook import OrderBook
+from receiver import Receiver
 from util import Util
+from console import Console
 
 
 class Exchange():
@@ -29,7 +30,7 @@ class Exchange():
         self.open = False
 
         # Connection receiver
-        self.connection_manager = receiver()
+        self.connection_manager = Receiver()
         self.msg_queue = self.connection_manager.get_queue()
 
         # Orderbook
@@ -38,8 +39,10 @@ class Exchange():
 
         # Outputting orderbook once per second, change to silent-mode later.
         self.printer = threading.Thread(name="printer", target=lambda: self._print_orderbook_thread(), daemon=True)
+        self.printer.start()
 
         self.operation_thread = threading.Thread(name="operate", target=lambda: self._operate(), daemon=True)
+        self.operation_thread.start()
 
     def open_exchange(self):
         """Open the exchange and allow clients to place orders."""
@@ -51,10 +54,11 @@ class Exchange():
     
     def print_orderbook(self):
         """Prints the Orderbook to the console in a nice format."""
+        # Console(loadfrom=self.orderbook.get_book()).print()
         print(json.dumps(
             self.orderbook.get_book(),
-            indent = 4,
-            separators = (',', ': ')
+            indent=4,
+            separators=(",", ": ")
         ))
     
     def _operate(self):
@@ -73,15 +77,15 @@ class Exchange():
             # A new client has established a connection.
             if msg["type"] == "C":
                 # Acknowledge the connection by returning a server event message.
-                if self.closed:
+                if not self.open:
                     outbound = ["S", Util.get_server_time(), "S"]
                 else:
                     outbound = ["S", Util.get_server_time(), "E"]
-                self.connection_manager.send_message(msg["id"], Util.package_outbound(outbound))
+                self.connection_manager.send_message(msg["id"], Util.package(outbound))
             else:
                 # Parse message if it's not a connection.
                 client_id = msg["id"]
-                content = Util.package(msg["header"], msg["body"])
+                content = Util.unpackage(msg["header"], msg["body"])
                 if client_id not in self.client_tokens.keys():
                     self.client_tokens[client_id] = 0 # Assume that client tokens increment from 1
 
@@ -108,7 +112,10 @@ class Exchange():
                 # Send outbound message back to client.
                 if msg_type == 'U' and success:
                     self.client_tokens[client_id] = content["replacement_order_token"]
-                self.connection_manager.send_message(client_id, Util.package_outbound(orderbook_msg))
+                elif msg_type == 'U' and not success:
+                    continue
+                print(orderbook_msg)
+                self.connection_manager.send_message(client_id, Util.package(orderbook_msg))
                 
 
     def _validate_order(self, content: dict, client_id: int) -> bool:
@@ -127,7 +134,7 @@ class Exchange():
             # Not Implemented: H, V, i, R, F, L, C, O
             if content["order_token"] <= self.client_tokens[client_id]:
                 return False
-            elif content["order_book"] > 9999:
+            elif content["orderbook_id"] > 9999:
                 err_code = "S"
             elif content["price"] > self.PRICE_MAX:
                 err_code = "X"
@@ -136,7 +143,7 @@ class Exchange():
             elif content["minimum_quantity"] > 0 and content["time_in_force"] == 0:
                 err_code = "N"
             elif content["buy_sell_indicator"] not in ("B", "S", "T", "E") or \
-                    content["order_classicification"] not in ("1", "3", "4", "5", "6") or \
+                    content["order_classification"] not in ("1", "3", "4", "5", "6") or \
                     content["time_in_force"] not in (0, 99999):
                 err_code = "Y"
             elif content["display"] not in ("P", ""):
@@ -146,7 +153,7 @@ class Exchange():
             else:
                 return True
             outbound = ["J", Util.get_server_time(), content["order_token"], err_code]
-            self.connection_manager.send_message(client_id, Util.package_outbound(outbound))
+            self.connection_manager.send_message(client_id, Util.package(outbound))
             return False
         elif msg_type == 'U':
             if content["replacement_order_token"] <= self.client_tokens[client_id]:

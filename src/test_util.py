@@ -13,7 +13,7 @@ if __name__ == "__main__":
         345624,
         1234,
         b"DAY ", # This must be 4 characters.
-        5000005, # Price  = $500000.5
+        500000.5, # Price  = $500000.5
         99999,
         5834,
         b"P",
@@ -23,8 +23,8 @@ if __name__ == "__main__":
         b'1'
     ]
 
-    b = Util.package_inbound(vals)
-    msg_dict = Util.unpackage_order(b[0:1], b[1:]) # Separate header byte from rest of the bytes.
+    b = Util.package(vals)
+    msg_dict = Util.unpackage(b[0:1], b[1:]) # Separate header byte from rest of the bytes.
     print(json.dumps( # Make the dictionary easy to read
         msg_dict,
         indent = 4,
@@ -37,14 +37,14 @@ if __name__ == "__main__":
         1234,
         1235,
         100000,
-        50005,
+        5000.5,
         0,
         b" ",
         555
     ]
 
-    b = Util.package_inbound(vals)
-    msg_dict = Util.unpackage_order(b[0:1], b[1:])
+    b = Util.package(vals)
+    msg_dict = Util.unpackage(b[0:1], b[1:])
     print(json.dumps( # Make the dictionary easy to read
         msg_dict,
         indent = 4,
@@ -58,8 +58,8 @@ if __name__ == "__main__":
         0
     ]
 
-    b = Util.package_inbound(vals)
-    msg_dict = Util.unpackage_order(b[0:1], b[1:])
+    b = Util.package(vals)
+    msg_dict = Util.unpackage(b[0:1], b[1:])
     print(json.dumps( # Make the dictionary easy to read
         msg_dict,
         indent = 4,

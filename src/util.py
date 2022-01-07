@@ -11,68 +11,55 @@ class Util():
     bytes and unpackaging inbound messages into dictionaries according to the OUCH protocol.
     """
 
+    @staticmethod
+    def get_orderbook_id_dict():
+        orderbook_ids = {
+
+        } 
+
+    @staticmethod
     def get_server_time():
         """
         Returns nanoseconds elasped since midnight - 0 nanoseconds as datetime only has microsecond accuracy.
         the time module has no way of returning the timestamp of midnight.
         """
-        seconds = (datetime.now() - datetime.combine(date.today(), dt.min.time())).total_seconds() 
-        return seconds / (timedelta(microseconds=1)*1000)
+        seconds = (datetime.now() - datetime.combine(date.today(), datetime.min.time())).total_seconds() 
+        return int(1000*seconds / (timedelta(microseconds=1).total_seconds()))
 
     @staticmethod
-    def package_outbound(package: list) -> bytes:
-        """
-        Package outbound messages from the server into bytes.
-
-        :param package: List of fields and values of outbound message in the
-                        order defined by the OUCH protocol.
-        :returns: packaged bytes object.
-        :raises Exception: Outbound order has not been implemented.
-        """
-        msg_type = package[0]
-        for i in range(len(package)):
-            if isinstance(package[i], str):
-                package[i] = bytes(package[i], encoding="ascii")
-        package = tuple(package)
-        format_s = None
-        if msg_type == "S": # Server event
-            format_s = "!cQc" 
-        elif msg_type == "J": # Order rejected
-            format_s = "!!cQIc"
-        else:
-            raise Exception(f"Unrecognised outbound message type {msg_type}")
-        return struct.pack(format_s, *package)
-
-    @staticmethod
-    def package_inbound(package: list):
+    def package(package: list):
         """
         Message should be a list with fields in the order defined in the Japannext OUCH Trading Specification.
 
-        :param package: List of fields and values of an inbound message in the
-                        order defined by the OUCH protocol.
+        :param package: List of fields and values of a message in order defined by the OUCH protocol.
         :returns: packaged bytes object of package.
         :raises Exception: Inbound order has invalid header.
         """
-        header = package[0]
         for i in range(len(package)):
             if isinstance(package[i], str):
                 package[i] = bytes(package[i], encoding="ascii")
+        header = package[0]
         format_s = None
         if header == b'O':
-            format_s = "!cI10scIi4siIIccIcc"
+            format_s = "!cI10scII4sIIIccIcc"
             package[7] = int(package[7]*10) # Convert decimal price to integer
         elif header == b'U':
-            format_s = "!cIIIiIcI"
+            format_s = "!cIIIIIcI"
             package[4] = int(package[4]*10) # Convert decimal price to integer
         elif header == b'X':
             format_s = "!cII"
+        elif header == b"S": # Server event
+            format_s = "!cQc" 
+        elif header == b"J": # Order rejected
+            format_s = "!!cQIc"
         else:
-            raise Exception(f"Invalid header '{header}'")
+            raise Exception(f"Unsupported message type '{header}'")
         package = tuple(package) 
-        
+
         return struct.pack(format_s, *package)
 
-    def unpackage_order(header: bytes, body: bytes) -> dict:
+    @staticmethod
+    def unpackage(header: bytes, body: bytes) -> dict:
         """
         Parse bytes input from the TCP socket into a dictionary output.
 
@@ -86,11 +73,18 @@ class Util():
         if header == b'O' or header == 'O':
             message_dict = Util._unpackage_enter_order(body)
         elif header == b'U' or header == 'U':
-            message_dict = Util._unpackage_replace_order(body)
+            if len(body) == 25:
+                message_dict = Util._unpackage_replace_order(body)
+            else:
+                message_dict = Util._unpackage_replace_message(body)
         elif header == b'X' or header == 'X':
             message_dict = Util._unpackage_cancel_order(body)
+        elif header == b'S' or header == 'S': # System Event
+            message_dict = Util._unpackage_system_message(body)
+        elif header == b'J' or header == 'J':
+            message_dict = Util._unpackage_order_rejected(body)
         else:
-            raise Exception(f"Invalid header '{header}'")
+            raise Exception(f"Unsupported message type '{header}'")
 
         return message_dict
 
@@ -114,14 +108,8 @@ class Util():
             "order_classification",
             "cash_margin_type"
         )
-        format_s = "!I10scIi4siIIccIcc"
-        fields = ('O',) + struct.unpack(format_s, body)
-        msg_dict = dict(zip(names, fields))
-        msg_dict["price"] /= 10
-        for key in msg_dict.keys():
-            if isinstance(msg_dict[key], bytes):
-                msg_dict[key] = msg_dict[key].decode("ascii").strip()
-
+        format_s = "!I10scII4sIIIccIcc"
+        msg_dict = Util._unpackage(names, body, format_s, 'O')
         return msg_dict
 
     @staticmethod
@@ -138,13 +126,7 @@ class Util():
             "minimum_quantity"
         )
         format_s = "!IIIiIcI"
-        fields = ('U',) + struct.unpack(format_s, body)
-        msg_dict = dict(zip(names, fields))
-        msg_dict["price"] /= 10
-        for key in msg_dict.keys():
-            if isinstance(msg_dict[key], bytes):
-                msg_dict[key] = msg_dict[key].decode("ascii").strip()
-        
+        msg_dict = Util._unpackage(names, body, format_s, 'U')
         return msg_dict 
 
     @staticmethod
@@ -156,11 +138,71 @@ class Util():
             "quantity"
         )
         format_s = "!II"
-        fields = ('X',) + struct.unpack(format_s, body)
-        msg_dict= dict(zip(names, fields))
+        msg_dict = Util._unpackage(names, body, format_s, 'X')
+        return msg_dict
+
+    @staticmethod
+    def _unpackage_replace_message(body: bytes):
+        names = (
+            "message_type",
+            "timestamp",
+            "replacement_order_token",
+            "buy_sell_indicator",
+            "quantity",
+            "orderbook_id",
+            "group",
+            "price",
+            "time_in_force",
+            "display",
+            "order_number",
+            "time_in_force",
+            "display",
+            "order_number",
+            "minimum_quantity",
+            "order_state",
+            "previous_order_token"
+        )
+        format_s = "!QIcII4sIIcQIcI"
+        msg_dict = Util._unpackage(names, body, format_s, 'U')
+        return msg_dict
+    
+    @staticmethod
+    def _unpackage_system_message(body: bytes):
+        names = (
+            "message_type",
+            "timestamp",
+            "system_event"
+        )
+        format_s = "!Qc"
+        msg_dict = Util._unpackage(names, body, format_s, 'S')
+        return msg_dict
+
+    @staticmethod
+    def _unpackage_order_rejected(body: bytes):
+        names = (
+            "message_type",
+            "timestamp",
+            "order_token",
+            "order_rejected_reason"
+        )
+        format_s = "!cQIc"
+        msg_dict = Util._unpackage(names, body, format_s, 'S')
+        return msg_dict
+
+    @staticmethod
+    def _unpackage(names: tuple, body: bytes, format_s: str, prefix=None):
+        """General method for unpackaging orders"""
+        fields = struct.unpack(format_s, body)
+
+        if prefix != None and isinstance(prefix, str):
+            fields = (prefix, ) + fields
+        msg_dict = dict(zip(names, fields))
+
+        if "price" in msg_dict.keys():
+            msg_dict["price"] = msg_dict["price"]/10
+
         for key in msg_dict.keys():
             if isinstance(msg_dict[key], bytes):
                 msg_dict[key] = msg_dict[key].decode("ascii").strip()
-
+        
         return msg_dict
-
