@@ -193,6 +193,7 @@ class OrderBook:
             else:
                 # increase the current order token number to match new order token number
                 self.curr_order_token[client_id] += 1
+                order_state = "L"
 
                 self.token_valid[client_id].append(True)
                 self.token_valid[client_id][existing_order_token] = False
@@ -224,7 +225,7 @@ class OrderBook:
                             replacement_order_token
                         ]
                     )
-                outbound = self.output_replaced(replace_message)
+                outbound = self.output_replaced(replace_message, order_id, order_state)
                 success = True
         else:
             # if not valid order_token and/or replacement_order_token
@@ -260,6 +261,7 @@ class OrderBook:
         # An Order Accepted Message acknowledges the receipt and acceptance of a valid Enter Order Message
         #to keep standard with all other functions
         msg = list(order_message.values())
+        msg.insert(1, Util.get_server_time())
         msg.insert(13, order_id)
         msg.insert(15, order_state)
 
@@ -282,6 +284,8 @@ class OrderBook:
         # The data fields from the Replace Order Message are echoed back in this message
         # to keep standard with all other functions
         msg = list(replace_message.values())
+        msg.append(msg[1])
+        msg[1] = Util.get_server_time()
         msg.insert(10, order_id)
         msg.insert(12, order_state)
         return msg

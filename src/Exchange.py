@@ -112,7 +112,7 @@ class Exchange():
                 # Send outbound message back to client.
                 if msg_type == 'U' and success:
                     self.client_tokens[client_id] = content["replacement_order_token"]
-                elif msg_type == 'U' and not success:
+                elif msg_type in ('U', 'X') and not success:
                     continue
                 print(orderbook_msg)
                 self.connection_manager.send_message(client_id, Util.package(orderbook_msg))
