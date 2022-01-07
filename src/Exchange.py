@@ -85,7 +85,7 @@ class Exchange():
         if msg_type == 'O':
             if content["order_token"] <= self.client_tokens[client_id]:
                 return False
-            elif content["orderbook_id"] > 9999:
+            elif content["order_id"] > 9999:
                 err_code = "S"
             elif content["price"] > self.PRICE_MAX:
                 err_code = "X"

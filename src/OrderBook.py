@@ -1,7 +1,5 @@
 import time
 
-###todo: include short sell and short sell exempt
-### integrate code for multiple clients
 
 class OrderBook:
     def __init__(self):
@@ -26,30 +24,8 @@ class OrderBook:
             'O': "Other"
         }
 
-    """
-    ## Please implement this!
-    handle_order
 
-    Determine the order's validity by checking what the Exchange class can't 
-    check, then determine what action the order book should take based on the "message_type" field. 
-    Assign the order a unique order number (HINT: Use the hash() function!). Each client
-    can place many orders throughout the day and different clients can use the same 
-    order token, so the order number has to be able to distinguish between their orders.
-
-    Hash could be a combination of both client_id and order_number
-
-    For an example use case, see the Exchange.py file lines 57 to 80.
-
-    params
-    client_id: Unique identifier for each individual client connected to the Exchange.
-    order_message: Dictionary of message received from the client.
-    
-    return
-    success: whether the order was successfully placed.
-    orderbook_msg: A dictionary in the format specified by the outbound sequenced messages
-                   in section 7.
-    """
-    def get_orderbook_id(self, client_id, order_message):
+    def get_order_id(self, client_id, order_message):
         if 'message_type' not in order_message:
             return None
         elif order_message['message_type'] == 'O':
@@ -75,16 +51,16 @@ class OrderBook:
 
         message_type = res['message_type']
 
-        orderbook_id = self.get_orderbook_id(client_id, res)
+        order_id = self.get_order_id(client_id, res)
 
         if message_type == "O":
-            success, outbound = self.handle_enter(res, client_id, orderbook_id)
+            success, outbound = self.handle_enter(res, client_id, order_id)
 
         elif message_type == "U":
-            success, outbound = self.handle_replace(res, client_id, orderbook_id)
+            success, outbound = self.handle_replace(res, client_id, order_id)
 
         elif message_type == "X":
-            success, outbound = self.handle_cancel(res, client_id, orderbook_id)
+            success, outbound = self.handle_cancel(res, client_id, order_id)
 
         else:
             print("message type error")
@@ -164,23 +140,14 @@ class OrderBook:
             # print(self.token_valid)
             # print("next")
 
-    def buy_order(self, indicator, quantity, price, time_in_force, time_received, orderbook_id, order_token):
+    def input_order(self, indicator, quantity, price, time_in_force, time_received, order_id, order_token):
         if price not in self.order_book:
-            self.order_book[price] = [[indicator, price, quantity, time_in_force, time_received, orderbook_id, order_token]]
+            self.order_book[price] = [[indicator, price, quantity, time_in_force, time_received, order_id, order_token]]
         else:
             # if price is already in order book
-            self.order_book[price].append([indicator, price, quantity, time_in_force, time_received, orderbook_id, order_token])
+            self.order_book[price].append([indicator, price, quantity, time_in_force, time_received, order_id, order_token])
 
         pass
-
-    def sell_order(self, indicator, quantity, price, time_in_force, time_received, orderbook_id, order_token):
-        # same thing as buy_order but this is for the case that problem changes into something harder
-
-        if price not in self.order_book:
-            self.order_book[price] = [[indicator, price, quantity, time_in_force, time_received, orderbook_id, order_token]]
-        else:
-            # if price is already in order book
-            self.order_book[price].append([indicator, price, quantity, time_in_force, time_received, orderbook_id, order_token])
 
     def get_message_type(self, res):
         return {}
@@ -221,7 +188,7 @@ class OrderBook:
 
         return success, rejected_reasons
 
-    def handle_enter(self, order_message, client_id, orderbook_id):
+    def handle_enter(self, order_message, client_id, order_id):
         # to check if successful
         order_token = order_message['order_token']
 
@@ -251,16 +218,11 @@ class OrderBook:
 
         else:
 
+            #check whether the order information is valid
             success, rejected_reasons = self.check_order_valid(order_message)
 
             if success:
-                if indicator == 'B':
-                    # Buy
-                    self.buy_order(indicator, quantity, price, time_in_force, time_received, orderbook_id, order_token)
-
-                elif indicator == 'S':
-                    # Sell
-                    self.sell_order(indicator, quantity, price, time_in_force, time_received, orderbook_id, order_token)
+                self.input_order(indicator, quantity, price, time_in_force, time_received, order_id, order_token)
 
                 # calls function to output a successful response
                 outbound = self.output_accepted(order_message)
@@ -277,7 +239,7 @@ class OrderBook:
 
         return success, outbound
 
-    def handle_replace(self, replace_message, client_id, orderbook_id):
+    def handle_replace(self, replace_message, client_id, order_id):
         existing_order_token = replace_message['existing_order_token']
         replacement_order_token = replace_message['replacement_order_token']
         quantity = replace_message['quantity']
@@ -292,7 +254,7 @@ class OrderBook:
                 for i, order in enumerate(order_level):
                     # loop through each order to find matching order_token and check whether client is matching
                     if order[-1] == existing_order_token and order[-2] == hash(str(client_id) + str(existing_order_token)):
-                        #nb reason why i didn't use the self.get_orderbook_id function is becasue that function takes replacement_order_token, but we are checking existing
+                        #nb reason why i didn't use the self.get_order_id function is becasue that function takes replacement_order_token, but we are checking existing
 
 
                         indicator = order[0]
@@ -306,11 +268,11 @@ class OrderBook:
 
             if price not in self.order_book:
                 self.order_book[price] = [
-                    [indicator, price, quantity, time_in_force, time_received, orderbook_id, replacement_order_token]]
+                    [indicator, price, quantity, time_in_force, time_received, order_id, replacement_order_token]]
             else:
                 # if price is already in order book
                 self.order_book[price].append(
-                    [indicator, price, quantity, time_in_force, time_received, orderbook_id, replacement_order_token])
+                    [indicator, price, quantity, time_in_force, time_received, order_id, replacement_order_token])
 
             outbound = self.output_replaced(replace_message)
 
@@ -324,14 +286,14 @@ class OrderBook:
 
         return success, outbound
 
-    def handle_cancel(self, cancel_message, client_id, orderbook_id):
+    def handle_cancel(self, cancel_message, client_id, order_id):
         order_token = cancel_message['order_token']
         if client_id in self.token_valid and self.token_valid[client_id][order_token]:
             # i.e. if specific order has not been cancelled or replaced
             for order_level in self.order_book.values():
                 for i, order in enumerate(order_level):
                     # loop through each order to find matching order_token
-                    if order[-1] == order_token and order[-2] == orderbook_id:
+                    if order[-1] == order_token and order[-2] == order_id:
                         quantity = order[2]
                         order_level.pop(i)  # remove original from order book
                         self.token_valid[client_id][order_token] = False

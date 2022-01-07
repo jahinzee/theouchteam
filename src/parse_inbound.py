@@ -29,7 +29,7 @@ def parse_enter_order(body):
         "client_reference",
         "buy_sell_indicator",
         "quantity",
-        "orderbook_id",
+        "order_id",
         "group",
         "price",
         "time_in_force",
