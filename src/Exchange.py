@@ -10,17 +10,24 @@ import time
 import json
 
 from OrderBook import OrderBook
-from parse_inbound import pack_message, parse
 from tcpip.receiver import receiver
 from util import Util
+
 
 class Exchange():
     PRICE_MAX = 214748364.6
     QUANTITY_MAX = 2147483647 
 
     def __init__(self):
+        """
+        An instance of this class should be initialised before trying to establish a connection using client.py.
+        All program components are integrated together with this class, connecting the 
+        receiver, orderbook, and output components. When this program is called, it will output 
+        the Orderbook to the console once every second.
+        """
         # Exchange state variables
         self.open = False
+
         # Connection receiver
         self.connection_manager = receiver()
         self.msg_queue = self.connection_manager.get_queue()
@@ -30,38 +37,60 @@ class Exchange():
         self.client_tokens = {}
 
         # Outputting orderbook once per second, change to silent-mode later.
-        self.printer = threading.Thread("printer", lambda: self.print_orderbook_thread(), daemon=True)
+        self.printer = threading.Thread(name="printer", target=lambda: self._print_orderbook_thread(), daemon=True)
 
-        self.operation_thread = threading.Thread("operate", lambda: self.operate(), daemon=True)
-        input() # Let main thread run
+        self.operation_thread = threading.Thread(name="operate", target=lambda: self._operate(), daemon=True)
+
+    def open_exchange(self):
+        """Open the exchange and allow clients to place orders."""
+        self.open = True
     
-    def print_orderbook_thread(self):
-        while True:
-            time.sleep(1)
-            print(json.dumps(
-                self.orderbook.get_book(),
-                indent = 4,
-                separators = (',', ': ')
-            ))
+    def close_exchange(self):
+        """Close the exchange and prevent clients from place orders."""
+        self.open = False
     
-    def operate(self):
+    def print_orderbook(self):
+        """Prints the Orderbook to the console in a nice format."""
+        print(json.dumps(
+            self.orderbook.get_book(),
+            indent = 4,
+            separators = (',', ': ')
+        ))
+    
+    def _operate(self):
+        """
+        Exchange's main function. Continuously retrieves messages from the reveiver's
+        Queue, parses it into dictionary format, validates the order format, passes it to the
+        OrderBook, then sends any OrderBook response back to the receiver.
+
+        A thread of this function is automatically created upon initialisation.
+        """
         while True:
+            # Wait until queue has messages, then retrieve it.
+            # The message is a dictionary with {"client_id": int, "header": bytes, "body": bytes}
             msg = self.msg_queue.get()
+
+            # A new client has established a connection.
             if msg["type"] == "C":
+                # Acknowledge the connection by returning a server event message.
                 if self.closed:
                     outbound = ["S", Util.get_server_time(), "S"]
                 else:
                     outbound = ["S", Util.get_server_time(), "E"]
                 self.connection_manager.send_message(msg["id"], Util.package_outbound(outbound))
             else:
+                # Parse message if it's not a connection.
                 client_id = msg["id"]
-                content = parse(msg["header"], msg["body"])
+                content = Util.package(msg["header"], msg["body"])
                 if client_id not in self.client_tokens.keys():
                     self.client_tokens[client_id] = 0 # Assume that client tokens increment from 1
-                valid = self.validate_order(content, client_id)
+
+                # Validate order fields according to the OUCH protocol.
+                valid = self._validate_order(content, client_id)
 
                 msg_type = content["message_type"]
                 if not valid:
+                    # If a replacement order is not valid and the original order token is in use, cancel the order.
                     if msg_type == 'U':
                         # Section 6.3
                         msg_type == "X"
@@ -73,16 +102,29 @@ class Exchange():
                     else:
                         return
                 
+                # Pass valid order into the orderbook
                 success, orderbook_msg = self.orderbook.handle_order(client_id, content)
+
+                # Send outbound message back to client.
                 if msg_type == 'U' and success:
                     self.client_tokens[client_id] = content["replacement_order_token"]
                 self.connection_manager.send_message(client_id, Util.package_outbound(orderbook_msg))
                 
 
-    def validate_order(self, content, client_id):
+    def _validate_order(self, content: dict, client_id: int) -> bool:
+        """
+        Validates the formatting of the order from a specfic client.
+
+        :param content: Decoded and parsed messaged sent by the client.
+        :param client_id: Unique Integer ID assigned to each client by the receiver.
+        :returns: boolean of whether the order is allowed or not.
+        """
         msg_type = content["message_type"]
         err_code = None
+        # If order placement
         if msg_type == 'O':
+            # Checking Error rejected reasons in Table 3 Section 7.7.
+            # Not Implemented: H, V, i, R, F, L, C, O
             if content["order_token"] <= self.client_tokens[client_id]:
                 return False
             elif content["order_book"] > 9999:
@@ -110,13 +152,18 @@ class Exchange():
             if content["replacement_order_token"] <= self.client_tokens[client_id]:
                 return False
 
-    def handle_signal(self):
+    def _handle_signal(self):
+        """Handler which dumps the orderbook into a csv file when SIGUSR1 or SIGILL is caught in silent mode."""
         # implement with sigill in windows and sigusr1 in linux
         # use sys.platform to check operating system
         pass 
 
-    def open_exchange(self):
-        self.open = True
-    
-    def close_exchange(self):
-        self.open = False
+    def _print_orderbook_thread(self):
+        """Threading wrapper for print_orderbook which outputs once every second."""
+        while True:
+            time.sleep(1)
+            self.print_orderbook()
+
+if __name__ == "__main__":
+    Exchange()
+    input()

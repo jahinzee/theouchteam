@@ -35,46 +35,81 @@ class receiver:
     }
 
     def __init__(self):
-        # Prepare socket
-        self.queue = Queue() # Message queue which will be retrieved by the exchange
+        """
+        This class accepts connections from multiple clients by spawning a new thread
+        whenever a client connects to the socket. On initialisation, this class will
+        immediately spawn a darmon listener which continuously listens for threads.
 
+        Messages from the client will be placed into a shared queue, which can be retrieved
+        by a context which calls the get_queue function.
+        """
+        # Message queue which will be retrieved by the exchange
+        self.queue = Queue() 
+
+        # Prepare socket
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._setup_socket()
+
         self.client_dict = {}
         self.client_dict_lock = threading.Lock()
         self.client_no = 0
+
+        # List of client Thread objects.
         self.threads = []
         self.thread_lock = threading.Lock()
-        self.daemon_listener = threading.Thread(
+
+        # Daemon thread which listens for and accepts connections.
+        self.daemon_listener = threading.Thread( 
             name = "daemon",
-            target = lambda: self.receive_connections_thread(),
+            target = lambda: self._receive_connections_thread(),
             daemon = True
         )
 
-    """
-    enter: (*address, *port)
-    """
     def __enter__ (self) -> None:
+        """
+        enter: (*address, *port)
+        """
         # Prepare!.. t h e   s o c k
         self._setup_socket()
         self.connection, self.client = self.socket.accept()
     
-    def _setup_socket(self):
-        self.socket.bind(defaultAddress)
-        self.socket.listen(1)
+    def send_message(self, client_id: int, msg: bytes):
+        """
+        Sends a byte message to the connection hashed to by the client_id.
+        """
+        self.client_dict[client_id].send(msg)
+
+    def get_queue(self) -> Queue:
+        """Returns the message queue."""
+        return self.queue
+
+    def get_clients(self) -> dict:
+        """Returns the dictionary hashing client_id to their respective socket."""
+        return self.client_dict.values()
 
     def terminate(self):
+        """Close all threads and shut down receiver."""
         self.thread_lock.acquire()
         for thread in self.threads:
             thread.join()
         self.thread_lock.release()
         self.daemon_listener.join()
+    
+    def _setup_socket(self):
+        """Bind socket and listen for connections."""
+        self.socket.bind(defaultAddress)
+        self.socket.listen(100)
 
-    def receive_connections_thread(self):
+    def _receive_connections_thread(self):
+        """Wrapper function for threading _receive_connections."""
         while True:
             self._receive_connections()
 
     def _receive_connections(self):
+        """
+        Daemon thread spawning a new thread whenever a client connects. Also
+        assigns a client id to each connection.
+        """
         connection, addr = self.socket.accept()
         client_id = hash((addr, self.client_no))
         self.client_dict[client_id] = connection
@@ -84,7 +119,7 @@ class receiver:
         })
         client = threading.Thread(
             name = "client"+str(self.client_no), 
-            target = lambda: self.handle_client(connection, client_id),
+            target = lambda: self._handle_client(connection, client_id),
             daemon = True
         )
         self.thread_lock.acquire()
@@ -92,15 +127,15 @@ class receiver:
         self.thread_lock.release()
         self.client_no += 1
 
-    """
-    handle_client
-
-    Listens to the client and puts any well formatted byte message into the queue.
-    """
-    def handle_client(self, connection, client_id):
+    def _handle_client(self, connection, client_id):
+        """
+        Listens to the client and puts any non-empty byte message into the queue.
+        A new thread running handle_client is spawned whenever the receiver accepts
+        a new connection.
+        """
         while True:
             try:
-                header, body = self.receive_bytes(connection)
+                header, body = self._receive_bytes(connection)
                 if body != 0x00:
                     self.queue.put({
                         "type": "M", # Message
@@ -111,27 +146,12 @@ class receiver:
             except OSError():
                 print(f"Connection of client_id {client_id} dropped.")
                 break
-    
-    """
-    send_message
 
-    Sends a byte message to the connection hashed to by the client_id.
-    """
-    def send_message(self, client_id, msg):
-        self.client_dict[client_id].send(msg)
-
-    def get_queue(self):
-        return self.queue
-
-    def get_clients(self):
-        return self.client_dict.values()
-
-    """
-    receive_bytes() -> (bytearray: header, bytearray: body)
-    - body is appropriately sized to match the header, according to Japannext OUCH Specs.
-    - all illegal headers are returned with a single null byte as body.
-    """
-    def receive_bytes(self, connection):
+    def _receive_bytes(self, connection: socket) -> (bytes, bytes):
+        """
+        Body is appropriately sized to match the header, according to Japannext OUCH Specs.
+        All illegal headers are returned with a single null byte as body.
+        """
         # Store header byte
         header = connection.recv(1)
 
@@ -147,9 +167,6 @@ class receiver:
         # output
         return header, body
 
-    """
-    exit:
-    - closes connection when out of scope
-    """
     def __exit__ (self):
+        """Closes connection when out of scope."""
         self.connection.close()
