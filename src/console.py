@@ -56,7 +56,7 @@ class Console:
 
     """
     init (*loadfrom)
-    - load data from existing order book type
+    - load data from existing order book
     """
     def __init__ (self, loadfrom = {}):
         self.internalBook = loadfrom
@@ -77,6 +77,7 @@ class Console:
     """
     remove (orderIDKey)
     - removes order with the same orderID as orderIDKey
+    - silently fails if orderIDKey is invalid
     """
     def remove (self, orderIDKey):
 
@@ -88,7 +89,7 @@ class Console:
     """
     replace (orderIDKey, newOrder)
     - replaces order with the same orderID as orderIDKey with newEntry
-    - silently fails if 
+    - silently fails if orderIDKey or newOrder is invalid
     """
     def replace (self, orderIDKey, newOrder):
 
@@ -101,7 +102,8 @@ class Console:
                     priceGroup[order] = newOrder
 
     """
-    show
+    print:
+    - displays formatted internalTable values in console
     """
     def print (self):
         
