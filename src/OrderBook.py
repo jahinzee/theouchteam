@@ -2,6 +2,9 @@ import time
 
 
 class OrderBook:
+    PRICE_MAX = 214748364.6
+    QUANTITY_MAX = 2147483647
+
     def __init__(self):
         self.order_book = {}  # limit order book
         self.curr_order_token = {}  # current order token number
@@ -83,30 +86,23 @@ class OrderBook:
             'quantity': 5000,
             'price': 323.4,
             'time_in_force': 100
-        }, 0], [{
-            'message_type': 'X',
+        }, 1], [{
+            'message_type': 'O',
             'order_token': 1,
-            'quantity': None
-        },0], [{
-            'message_type': 'O',
-            'order_token': 2,
             'indicator': 'B',
-            'quantity': 200,
-            'price': 328.4,
+            'quantity': 300,
+            'price': 323.4,
             'time_in_force': 100,
             'display': "h"
         },0], [{
-            'message_type': 'O',
-            'order_token': 3,
-            'indicator': 'B',
-            'quantity': 200,
-            'price': 328.4,
-            'time_in_force': 100,
-            'display': "h"
-        },0],
+            'message_type': 'U',
+            'existing_order_token': 0,
+            'replacement_order_token': 2,
+            'quantity': 5000,
+            'price': 323.4,
+            'time_in_force': 100
+        }, 0]
         ]
-
-
 
         for res in testing:
 
@@ -147,8 +143,6 @@ class OrderBook:
             # if price is already in order book
             self.order_book[price].append([indicator, price, quantity, time_in_force, time_received, order_id, order_token])
 
-        pass
-
     def get_message_type(self, res):
         return {}
 
@@ -162,6 +156,34 @@ class OrderBook:
         return {}
 
     def check_order_valid(self, order_message):
+
+        #Rayman's code
+        # success = True
+        # err_code = ""
+        #
+        # if content["orderbook_id"] > 9999:
+        #     err_code = "S"
+        #
+        # elif content["price"] > self.PRICE_MAX:
+        #     err_code = "X"
+        #
+        # elif content["quantity"] > self.QUANTITY_MAX:
+        #     err_code = "Z"
+        #
+        # elif content["minimum_quantity"] > 0 and content["time_in_force"] == 0:
+        #     err_code = "N"
+        #
+        # elif content["buy_sell_indicator"] not in ("B", "S", "T", "E") or \
+        #         content["order_classicification"] not in ("1", "3", "4", "5", "6") or \
+        #         content["time_in_force"] not in (0, 99999):
+        #     err_code = "Y"
+        #
+        # elif content["display"] not in ("P", ""):
+        #     err_code = "D"
+        #
+        # elif content["cash_margin_type"] not in ("1", "2", "3", "4", "5"):
+        #     err_code = "G"
+
         # checks whether invalid quantity:
         success = True
         rejected_reasons = ""
@@ -247,7 +269,7 @@ class OrderBook:
         time_in_force = replace_message['time_in_force']
         time_received = time.time()
 
-        if existing_order_token >= 0 and existing_order_token <= self.curr_order_token[client_id] and replacement_order_token == self.curr_order_token[client_id] + 1 and \
+        if client_id in self.curr_order_token and existing_order_token >= 0 and existing_order_token <= self.curr_order_token[client_id] and replacement_order_token == self.curr_order_token[client_id] + 1 and \
                 self.token_valid[client_id][existing_order_token] == True:
 
             for order_level in self.order_book.values():
