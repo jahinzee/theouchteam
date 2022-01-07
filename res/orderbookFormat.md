@@ -7,8 +7,8 @@ This document shows how the order book data is stored and interpreted.
 These values contain critical information, and should not be modified manually.
 
 - **Column 1:** Order ID:
-  - Represented in file as hes
-  - Output as decimal
+  - Represented in file as hex
+  - Output as decimal without leading zeros
 
 - **Column 2:** Timestamp:
   - Represented in file as seconds elapsed since midnight, start of trading day (UTC)
