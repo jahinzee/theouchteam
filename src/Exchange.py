@@ -9,7 +9,7 @@ import threading
 import time
 import json
 
-from orderbook import OrderBook
+from OrderBook import OrderBook
 from receiver import Receiver
 from util import Util
 from console import Console
@@ -116,7 +116,7 @@ class Exchange():
             self.print_dict.set()
                 
 
-    def _validate_order_syntax(self, content: dict, client_id: int) -> (bool, list):
+    def _validate_order_syntax(self, content: dict, client_id: int): # -> (bool, list):
         """
         Validates the formatting of the order from a specfic client.
 

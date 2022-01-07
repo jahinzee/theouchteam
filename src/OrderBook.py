@@ -44,7 +44,7 @@ class OrderBook:
     def get_book(self) -> dict:
         return self.order_book
 
-    def handle_order(self, client_id: int, msg: dict) -> (bool, list):
+    def handle_order(self, client_id: int, msg: dict): # -> (bool, dict):
         success, outbound = self._validate_order(client_id, msg)
         if success:
             outbound = self._process_order(client_id, msg)
@@ -53,7 +53,7 @@ class OrderBook:
             raise Exception("Did not handle all validation or processing cases!")
         return success, outbound
     
-    def _validate_order(self, client_id: int, msg: dict) -> (bool, list):
+    def _validate_order(self, client_id: int, msg: dict): # -> (bool, list):
         order_type = msg["message_type"]
         if order_type == "O": # Validate enter order message
             success, outbound = self._validate_enter_order(client_id, msg)
@@ -65,7 +65,7 @@ class OrderBook:
             raise ValueError(f"Invalid order type {order_type} caught in OrderBook.")
         return success, outbound
     
-    def _validate_enter_order(self, client_id: int, msg: dict) -> (bool, list):
+    def _validate_enter_order(self, client_id: int, msg: dict): # -> (bool, list):
         token = msg["order_token"]
         if not client_id in self.tokens_used.keys():
             self.tokens_used[client_id] = []
@@ -77,7 +77,7 @@ class OrderBook:
             else:
                 return True, None
     
-    def _validate_replace_order(self, client_id: int, msg: dict) -> (bool, list):
+    def _validate_replace_order(self, client_id: int, msg: dict): # -> (bool, list):
         exst_token = msg["existing_order_token"]
         repl_token = msg["replacement_order_token"]
         exst_order_id = self._get_order_id(client_id, exst_token)
@@ -90,7 +90,7 @@ class OrderBook:
             else:
                 return True, None
     
-    def _validate_cancel_order(self, client_id: int, msg: dict) -> (bool, list):
+    def _validate_cancel_order(self, client_id: int, msg: dict): # -> (bool, list):
         order_id = self._get_order_id(client_id, msg["order_token"])
         if not client_id in self.tokens_used.keys() or \
                 not order_id in self.order_id_aliases.keys():
