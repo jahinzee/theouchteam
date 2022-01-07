@@ -25,13 +25,20 @@ from queue import Queue
 # global variable: address + port
 defaultAddress = ('localhost', 1007)
 
-class receiver:
+class Receiver():
 
     # class constant: Store the expected length of each type of message (minus the header byte), along with appropriate header byte
     BODY_LENGTH_DICT = {
         b'O' : 47,  # ENTER
         b'U' : 25,  # REPLACE
         b'X' : 8,   # CANCEL
+        b'S' : 9,   # EVENT
+        b'A' : 64,  # ACCEPTED
+        b'U' : 51,  # REPLACED
+        b'C' : 17,  # CANCELLED
+        b'D' : 26,  # AIQ CANCELLED
+        b'E' : 29,  # EXECUTED
+        b'J' : 13,  # REJECTED
     }
 
     def __init__(self):
@@ -64,6 +71,7 @@ class receiver:
             target = lambda: self._receive_connections_thread(),
             daemon = True
         )
+        self.daemon_listener.start()
 
     def __enter__ (self) -> None:
         """
@@ -77,6 +85,12 @@ class receiver:
         """
         Sends a byte message to the connection hashed to by the client_id.
         """
+        header = msg[0:1]
+        if header in self.BODY_LENGTH_DICT.keys():
+            if len(msg)-1 != self.BODY_LENGTH_DICT[header]:
+                raise ValueError(f"Message {msg} has invalid length {len(msg)}")
+        else:
+            raise ValueError(f"Sending message with invalid header '{header}'")
         self.client_dict[client_id].send(msg)
 
     def get_queue(self) -> Queue:
@@ -122,6 +136,7 @@ class receiver:
             target = lambda: self._handle_client(connection, client_id),
             daemon = True
         )
+        client.start()
         self.thread_lock.acquire()
         self.threads.append(client)
         self.thread_lock.release()
@@ -143,7 +158,7 @@ class receiver:
                         "header": header,
                         "body": body
                     })
-            except OSError():
+            except Exception:
                 print(f"Connection of client_id {client_id} dropped.")
                 break
 
@@ -156,13 +171,14 @@ class receiver:
         header = connection.recv(1)
 
         # Calculates expected size of body, using bodyLengthDict
-        bodyLength = 0
-        for byte in self.bodyLengthDict:
-            if header == byte:
-                bodyLength = self.bodyLengthDict[byte]
+        body_length = 0
+        if header in self.BODY_LENGTH_DICT.keys():
+            body_length = self.BODY_LENGTH_DICT[header]
+        else:
+            raise ValueError(f"Invalid header type '{header}'")
 
         # grab body,
-        body = connection.recv(bodyLength) if bodyLength != 0 else 0x00
+        body = connection.recv(body_length) if body_length != 0 else 0x00
 
         # output
         return header, body
