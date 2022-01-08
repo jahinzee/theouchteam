@@ -139,9 +139,6 @@ class Console:
 
         # Processing order status
         for order in singleTable:
-            
-            # Process order status; default: open
-            order += "OPEN"
 
             # Process symbol
             order[3] = self.SYMBOLS[order[3]]
