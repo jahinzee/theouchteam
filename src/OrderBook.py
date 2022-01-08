@@ -222,56 +222,138 @@ class OrderBook:
         return abs(hash((client_id, order_token))) % 2**32
 
     def test(self):
-        testing = [[{
-            'message_type': 'O',
-            'order_token': 0,
-            'client_reference': 'abcdefghij',
-            'buy_sell_indicator': 'B',
-            'quantity': 200,
-            'orderbook_id': 3,
-            'group': "DAY",
-            'price': 323.4,
-            'time_in_force': 100,
-            'firm_id': '3434',
-            'display': "P",
-            'capacity': 'A',
-            'minimum_quantity': 5,
-            'order_classification': '1',
-            'cash_margin_type': '3'
-        }, 0], [{
-            'message_type': 'U',
-            'existing_order_token': 0,
-            'replacement_order_token': 2,
-            'quantity': 5000,
-            'price': 323.4,
-            'time_in_force': 100,
-            'display': 'P',
-            'minimum_quantity': 23
-        }, 0], [{
-            'message_type': 'X',
-            'order_token': 2,
-            'quantity': -10
-        }, 1], [{
-            'message_type': 'O',
-            'order_token': 3,
-            'client_reference': 'abcdefghij',
-            'buy_sell_indicator': 'B',
-            'quantity': 200,
-            'orderbook_id': 3,
-            'group': "DAY",
-            'price': 323.4,
-            'time_in_force': 100,
-            'firm_id': '3434',
-            'display': "P",
-            'capacity': 'A',
-            'minimum_quantity': 5,
-            'order_classification': '1',
-            'cash_margin_type': '3'
-        }, 0]
-        ]
+        testing = [{
+         "message_type":"O",
+         "order_token":0,
+         "client_reference":"something",
+         "buy_sell_indicator":"B",
+         "quantity":200,
+         "orderbook_id":1,
+         "group":"DAY",
+         "price":100.0,
+         "time_in_force":100,
+         "firm_id":"3434",
+         "display":"P",
+         "capacity":"A",
+         "minimum_quantity":5,
+         "order_classification":"1",
+         "cash_margin_type":"3"
+      },{
+         "message_type":"O",
+         "order_token":1,
+         "client_reference":"something",
+         "buy_sell_indicator":"B",
+         "quantity":200,
+         "orderbook_id":1,
+         "group":"DAY",
+         "price":100.0,
+         "time_in_force":100,
+         "firm_id":"3434",
+         "display":"P",
+         "capacity":"A",
+         "minimum_quantity":5,
+         "order_classification":"1",
+         "cash_margin_type":"3"
+      }, {
+         "message_type":"O",
+         "order_token":2,
+         "client_reference":"something",
+         "buy_sell_indicator":"B",
+         "quantity":200,
+         "orderbook_id":1,
+         "group":"DAY",
+         "price":100.1,
+         "time_in_force":100,
+         "firm_id":"3434",
+         "display":"P",
+         "capacity":"A",
+         "minimum_quantity":5,
+         "order_classification":"1",
+         "cash_margin_type":"3"
+      }, {
+         "message_type":"O",
+         "order_token":3,
+         "client_reference":"something",
+         "buy_sell_indicator":"B",
+         "quantity":100.0,
+         "orderbook_id":1,
+         "group":"DAY",
+         "price":325.4,
+         "time_in_force":100,
+         "firm_id":"3434",
+         "display":"P",
+         "capacity":"A",
+         "minimum_quantity":5,
+         "order_classification":"1",
+         "cash_margin_type":"3"
+      }, {
+         "message_type":"O",
+         "order_token":4,
+         "client_reference":"something",
+         "buy_sell_indicator":"S",
+         "quantity":200,
+         "orderbook_id":1,
+         "group":"DAY",
+         "price":103.0,
+         "time_in_force":100,
+         "firm_id":"3434",
+         "display":"P",
+         "capacity":"A",
+         "minimum_quantity":5,
+         "order_classification":"1",
+         "cash_margin_type":"3"
+      },  {
+         "message_type":"O",
+         "order_token":5,
+         "client_reference":"something",
+         "buy_sell_indicator":"S",
+         "quantity":200,
+         "orderbook_id":1,
+         "group":"DAY",
+         "price":103.0,
+         "time_in_force":100,
+         "firm_id":"3434",
+         "display":"P",
+         "capacity":"A",
+         "minimum_quantity":5,
+         "order_classification":"1",
+         "cash_margin_type":"3"
+      }
+      {
+         "message_type":"U",
+         "existing_order_token":5,
+         "replacement_order_token":6,
+         "quantity":5000,
+         "price":103.0,
+         "time_in_force":100,
+         "display":"P",
+         "minimum_quantity":23
+      },
+      {
+         "message_type":"X",
+         "order_token":2,
+         "quantity":-10
+      },
+      {
+         "message_type":"O",
+         "order_token":3,
+         "client_reference":"something",
+         "buy_sell_indicator":"B",
+         "quantity":200,
+         "orderbook_id":1,
+         "group":"DAY",
+         "price":323.4,
+         "time_in_force":100,
+         "firm_id":"3434",
+         "display":"P",
+         "capacity":"A",
+         "minimum_quantity":5,
+         "order_classification":"1",
+         "cash_margin_type":"3"
+      }]
 
         for res in testing:
-            success, outbound = self.handle_order(res[1], res[0])
+            success, outbound = self.handle_order(0, res )
             print("--------")
             print( outbound)
             print("--------")

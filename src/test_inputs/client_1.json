@@ -1,0 +1,100 @@
+{
+    "_expected_behaviour": [
+        "1. Order message should be successful",
+        "2. Order message should fail due to invalid minimum quantity",
+        "3. Order message should be successful",
+        "4. Order message should receive no response due to invalid order token",
+        "5. Replace message should be successful",
+        "6. Cancel message should be ignored as the order token doesn't exist anymore",
+        "7. Cancel message should be succeesful"
+    ],
+    "actions": [
+        { 
+            "message_type": "O",
+            "order_token": 1,
+            "client_reference": "Lenny     ",
+            "buy_sell_indicator": "B",
+            "quantity": 100,
+            "orderbook_id": 1,
+            "group": "DAY ",
+            "price": 2300,
+            "time_in_force": 99999,
+            "firm_id": 0,
+            "display": " ",
+            "capacity": "P",
+            "minimum_quantity": 0,
+            "order_classification": "1",
+            "cash_margin_type": "1"
+        },
+        {
+            "message_type": "O",
+            "order_token": 2,
+            "client_reference": "Lenny     ",
+            "buy_sell_indicator": "B",
+            "quantity": 200,
+            "orderbook_id": 2,
+            "group": "DAY ",
+            "price": 500.5,
+            "time_in_force": 99999,
+            "firm_id": 0,
+            "display": " ",
+            "capacity": "P",
+            "minimum_quantity": 100,
+            "order_classification": "1",
+            "cash_margin_type": "1"
+        },
+        {
+            "message_type": "O",
+            "order_token": 3,
+            "client_reference": "Lenny     ",
+            "buy_sell_indicator": "B",
+            "quantity": 200,
+            "orderbook_id": 2,
+            "group": "DAY ",
+            "price": 500.5,
+            "time_in_force": 99999,
+            "firm_id": 0,
+            "display": " ",
+            "capacity": "P",
+            "minimum_quantity": 0,
+            "order_classification": "1",
+            "cash_margin_type": "1"
+        },
+        {
+            "message_type": "O",
+            "order_token": 1,
+            "client_reference": "Lenny     ",
+            "buy_sell_indicator": "S",
+            "quantity": 500,
+            "orderbook_id": 3,
+            "group": "DAY ",
+            "price": 1203.5,
+            "time_in_force": 99999,
+            "firm_id": 0,
+            "display": " ",
+            "capacity": "P",
+            "minimum_quantity": 0,
+            "order_classification": "1",
+            "cash_margin_type": "1"
+        },
+        {
+            "message_type": "U",
+            "existing_order_token": 1,
+            "replacement_order_token": 5,
+            "quantity": 115,
+            "price": 2300,
+            "time_in_force": 99999,
+            "display": "P",
+            "minimum_quantity": 0
+        },
+        {
+            "message_type": "X",
+            "order_token": 1,
+            "quantity": 0
+        },
+        {
+            "message_type": "X",
+            "order_token": 5,
+            "quantity": 0
+        }
+    ]
