@@ -12,7 +12,7 @@ bootstrap = Bootstrap(app)
 
 mything = 5
 
-order_number_index = 0
+order_number_index = 1
 
 normalisedList = []
 
@@ -43,7 +43,7 @@ def normalise_enter(form_info):
         'quantity': int(form_info['quantity']),
         'orderbook_id': int(form_info['orderbook_id']),
         'group': str(form_info['group']),
-        'price': int(form_info['price']),
+        'price': float(form_info['price']),
         'time_in_force': int(form_info['time_in_force']),
         'firm_id': int(form_info['firm_id']),
         'display': str(form_info['display']),
@@ -62,7 +62,7 @@ def normalised_replace(form_info):
         'existing_order_token': int(form_info['existing_order_token']),
         'replacement_order_token': int(form_info['replacement_order_token']),
         'quantity': int(form_info['quantity']),
-        'price': int(form_info['price']),
+        'price': float(form_info['price']),
         'time_in_force': int(form_info['time_in_force']),
         'display': str(form_info['display']),
         'minimum_quantity': int(form_info['minimum_quantity']),
@@ -82,38 +82,44 @@ def normalised_cancel(form_info):
 
 @app.route('/enter_order', methods = ['GET', 'POST'])
 def enter_order_page():
+    global order_number_index
     form = Enter_Order()
     if form.validate_on_submit():
+        order_number_index += 1
         form_info = request.form
         normalise_enter(form_info)
         return redirect(url_for('enter_order_page'))
 
-    return render_template('enter.html', form = form)
+    return render_template('enter.html', form = form, num = order_number_index)
 
 @app.route('/replace_order', methods = ['GET', 'POST'])
 def replace_order_page():
+    global order_number_index
     form = Replace_Order()
     if form.validate_on_submit():
+        order_number_index += 1
         form_info = request.form
         normalised_replace(form_info)
-        return redirect(url_for('replace'))
+        return redirect(url_for('replace_order_page'))
 
-    return render_template('replace.html', form = form)
+    return render_template('replace.html', form = form, num = order_number_index)
 
 @app.route('/cancel_order', methods = ['GET', 'POST'])
 def cancel_order_page():
+    global order_number_index
     form = Cancel_Order()
     if form.validate_on_submit():
+        order_number_index +=1
         form_info = request.form
         normalised_cancel(form_info)
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('cancel_order_page'))
 
-    return render_template('cancel.html', form = form)
+    return render_template('cancel.html', form = form, num = order_number_index)
 
 @app.route('/dashboard', methods=  ['GET', 'POST'])
 def dashboard():
     print("hello")
-    return render_template('dashboard.html', order_book=order_book)
+    return render_template('dashboard.html')
 
 
 def testing():

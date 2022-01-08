@@ -16,15 +16,15 @@
                     {{ form.hidden_tag() }}
                     <p>
                         {{ form.message_type.label }}
-                        {{ form.message_type(size=40, class='select-box', value = 0)}}
+                        {{ form.message_type(size=40, class='select-box', value = "X")}}
                     </p>
                     <p>
                         {{ form.order_token.label }}
-                        {{ form.order_token(size=40, placeholder = '0', class='select-box',value = 0)}}
+                        {{ form.order_token(size=40, placeholder = '0', class='select-box',value = num - 1)}}
                     </p>
                     <p>
                         {{ form.quantity.label }}
-                        {{ form.quantity(size=40, placeholder = '0', class='select-box',value = 0)}}
+                        {{ form.quantity(size=40, placeholder = '0', class='select-box',value = 100)}}
                     </p>
 
                     <p>

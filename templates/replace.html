@@ -16,31 +16,31 @@
                     {{ form.hidden_tag() }}
                     <p>
                         {{ form.message_type.label }}
-                        {{ form.message_type(size=40, class='select-box', value = 0)}}
+                        {{ form.message_type(size=40, class='select-box', value = "U")}}
                     </p>
                     <p>
                         {{ form.existing_order_token.label }}
-                        {{ form.existing_order_token(size=40, placeholder = '0', class='select-box',value = 0)}}
+                        {{ form.existing_order_token(size=40, placeholder = '0', class='select-box',value = num-1)}}
                     </p>
                     <p>
                         {{ form.replacement_order_token.label }}
-                        {{ form.replacement_order_token(size=40, placeholder = '0', class='select-box',value = 0)}}
+                        {{ form.replacement_order_token(size=40, placeholder = '0', class='select-box',value = num)}}
                     </p>
                     <p>
                         {{ form.quantity.label }}
-                        {{ form.quantity(size=40, placeholder = '0', class='select-box',value = 0)}}
+                        {{ form.quantity(size=40, placeholder = '0', class='select-box',value = 450)}}
                     </p>
                     <p>
                         {{ form.price.label }}
-                        {{ form.price(size=40, placeholder = '0', class='select-box', value = 0)}}
+                        {{ form.price(size=40, placeholder = '0', class='select-box', value = 100.5)}}
                     </p>
                     <p>
                         {{ form.time_in_force.label }}
-                        {{ form.time_in_force(size=40, placeholder = '0', class='select-box', value = 0)}}
+                        {{ form.time_in_force(size=40, placeholder = '0', class='select-box', value = 99999)}}
                     </p>
                     <p>
                         {{ form.display.label }}
-                        {{ form.display(size=40, placeholder = '0', class='select-box', value = 0)}}
+                        {{ form.display(size=40, placeholder = '0', class='select-box', value = "P")}}
                     </p>
                     <p>
                         {{ form.minimum_quantity.label }}
