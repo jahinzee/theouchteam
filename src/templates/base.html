@@ -1,0 +1,36 @@
+{% extends 'bootstrap/base.html' %}
+
+{% block title %}
+    {% block page_title %}{% endblock %} - OUCH
+{% endblock %}
+
+{% block styles %}
+{{super()}}
+<link rel="stylesheet" href="{{url_for('static', filename='style.css')}}">
+{% endblock %}
+
+{% block navbar %}
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand header-size" href="/">OUCH</a>
+            </div>
+            <ul class="nav navbar-nav float-right">
+                <li><a href="/enter_order">Enter Order</a></li>
+                <li><a href = "/replace_order" target = "">Replace Order</a></li>
+                <li><a href="/cancel_order" target="">Cancel Order </a></li>
+            </ul>
+        </div>
+    </nav>
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        {% block page_content %}{% endblock %}
+    </div>
+
+    <hr>
+    <div>
+        <p class="panel-footer footer-text"> OUCH <a href="#" class="float-right">Back to Top</a></p>
+    </div>
+{% endblock %}
