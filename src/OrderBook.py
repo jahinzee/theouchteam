@@ -44,7 +44,7 @@ class OrderBook:
     def get_book(self) -> dict:
         return self.order_book
 
-    def handle_order(self, client_id: int, msg: dict) -> (bool, list):
+    def handle_order(self, client_id: int, msg: dict): # -> (bool, dict):
         success, outbound = self._validate_order(client_id, msg)
         if success:
             outbound = self._process_order(client_id, msg)
@@ -53,7 +53,7 @@ class OrderBook:
             raise Exception("Did not handle all validation or processing cases!")
         return success, outbound
     
-    def _validate_order(self, client_id: int, msg: dict) -> (bool, list):
+    def _validate_order(self, client_id: int, msg: dict): # -> (bool, list):
         order_type = msg["message_type"]
         if order_type == "O": # Validate enter order message
             success, outbound = self._validate_enter_order(client_id, msg)
@@ -65,7 +65,7 @@ class OrderBook:
             raise ValueError(f"Invalid order type {order_type} caught in OrderBook.")
         return success, outbound
     
-    def _validate_enter_order(self, client_id: int, msg: dict) -> (bool, list):
+    def _validate_enter_order(self, client_id: int, msg: dict): # -> (bool, list):
         token = msg["order_token"]
         if not client_id in self.tokens_used.keys():
             self.tokens_used[client_id] = []
@@ -77,7 +77,7 @@ class OrderBook:
             else:
                 return True, None
     
-    def _validate_replace_order(self, client_id: int, msg: dict) -> (bool, list):
+    def _validate_replace_order(self, client_id: int, msg: dict): # -> (bool, list):
         exst_token = msg["existing_order_token"]
         repl_token = msg["replacement_order_token"]
         exst_order_id = self._get_order_id(client_id, exst_token)
@@ -90,7 +90,7 @@ class OrderBook:
             else:
                 return True, None
     
-    def _validate_cancel_order(self, client_id: int, msg: dict) -> (bool, list):
+    def _validate_cancel_order(self, client_id: int, msg: dict): # -> (bool, list):
         order_id = self._get_order_id(client_id, msg["order_token"])
         if not client_id in self.tokens_used.keys() or \
                 not order_id in self.order_id_aliases.keys():
@@ -143,15 +143,16 @@ class OrderBook:
 
     def _build_order(self, client_id: int, msg: dict):
         token = msg["order_token"]
-        order = []
-        order.append(msg["buy_sell_indicator"])
-        order.append(msg["price"])
-        order.append(msg["quantity"])
-        order.append(msg["orderbook_id"])
-        order.append(msg["time_in_force"])
-        order.append(Util.get_server_time())
-        order.append(self._get_order_id(client_id, token))
-        order.append(token)
+        order = [
+            msg["buy_sell_indicator"],
+            msg["price"],
+            msg["quantity"],
+            msg["orderbook_id"],
+            msg["time_in_force"],
+            Util.get_server_time(),
+            self._get_order_id(client_id,token),
+            token
+        ]
         return order
 
     def _process_replace_order(self, client_id: int, msg: dict) -> list:
@@ -219,3 +220,60 @@ class OrderBook:
 
     def _get_order_id(self, client_id: int, order_token: int):
         return abs(hash((client_id, order_token))) % 2**32
+
+    def test(self):
+        testing = [[{
+            'message_type': 'O',
+            'order_token': 0,
+            'client_reference': 'abcdefghij',
+            'buy_sell_indicator': 'B',
+            'quantity': 200,
+            'orderbook_id': 3,
+            'group': "DAY",
+            'price': 323.4,
+            'time_in_force': 100,
+            'firm_id': '3434',
+            'display': "P",
+            'capacity': 'A',
+            'minimum_quantity': 5,
+            'order_classification': '1',
+            'cash_margin_type': '3'
+        }, 0], [{
+            'message_type': 'U',
+            'existing_order_token': 0,
+            'replacement_order_token': 2,
+            'quantity': 5000,
+            'price': 323.4,
+            'time_in_force': 100,
+            'display': 'P',
+            'minimum_quantity': 23
+        }, 0], [{
+            'message_type': 'X',
+            'order_token': 2,
+            'quantity': -10
+        }, 1], [{
+            'message_type': 'O',
+            'order_token': 3,
+            'client_reference': 'abcdefghij',
+            'buy_sell_indicator': 'B',
+            'quantity': 200,
+            'orderbook_id': 3,
+            'group': "DAY",
+            'price': 323.4,
+            'time_in_force': 100,
+            'firm_id': '3434',
+            'display': "P",
+            'capacity': 'A',
+            'minimum_quantity': 5,
+            'order_classification': '1',
+            'cash_margin_type': '3'
+        }, 0]
+        ]
+
+        for res in testing:
+            success, outbound = self.handle_order(res[1], res[0])
+            print("--------")
+            print( outbound)
+            print("--------")
+
+

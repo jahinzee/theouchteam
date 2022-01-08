@@ -111,7 +111,6 @@ class Console:
         singleTable = []
         for priceGroup in self.internalBook:
             singleTable += self.internalBook[priceGroup]
-            singleTable += ['','','','','','','','']
         
         # Clear and resize cmd/terminal window
         os.system(self.CMD_LIST["CLEAR"][sys.platform])
@@ -119,5 +118,3 @@ class Console:
 
         # Print!
         print(tabulate(singleTable, headers = ["Indicator", "Price", "Quantity", "Orderbook ID", "Time in Force", "Time Received", "Order ID", "Order Token"]))    
-
-c = Console().print()

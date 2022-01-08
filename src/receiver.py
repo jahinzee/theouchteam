@@ -162,7 +162,7 @@ class Receiver():
                 print(f"Connection of client_id {client_id} dropped.")
                 break
 
-    def _receive_bytes(self, connection: socket) -> (bytes, bytes):
+    def _receive_bytes(self, connection: socket): # -> (bytes, bytes):
         """
         Body is appropriately sized to match the header, according to Japannext OUCH Specs.
         All illegal headers are returned with a single null byte as body.
