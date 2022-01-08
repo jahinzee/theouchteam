@@ -66,6 +66,9 @@ class Receiver():
         self.message_log_lock = threading.Lock()
         self.message_log = []
 
+        self.connection_log_lock = threading.Lock()
+        self.connection_log = []
+
         # List of client Thread objects.
         self.threads = []
         self.thread_lock = threading.Lock()
@@ -104,6 +107,15 @@ class Receiver():
         pprint.pprint(self.message_log)
         self.message_log_lock.release()
         print("Address: " + str(self.DEFAULT_ADDRESS))
+    
+    def print_connections(self):
+        self.connection_log_lock.acquire()
+        print("--------------")
+        print("Connection Log")
+        print("--------------")
+        for event in self.connection_log:
+            print(event)
+        self.connection_log_lock.release()
 
     def terminate(self):
         """Close all threads and shut down receiver."""
@@ -137,6 +149,10 @@ class Receiver():
         self.client_dict_lock.acquire()
         self.client_dict[client_id] = connection
         self.client_dict_lock.release()
+
+        self.connection_log_lock.acquire()
+        self.connection_log.append(f"{Util.get_server_time()}: client_id {client_id} connected.")
+        self.connection_log_lock.release()
 
         self.queue.put({
             "type": "C",
@@ -175,7 +191,9 @@ class Receiver():
                     self.message_log.append(["id: " + str(client_id), header + body])
                     self.message_log_lock.release()
             except Exception:
-                print(f"Connection of client_id {client_id} dropped.")
+                self.connection_log_lock.acquire()
+                self.connection_log.append(f"{Util.get_server_time()}: client_id {client_id} disconnected.")
+                self.connection_log_lock.release()
                 break
 
     def _receive_bytes(self, connection: socket): # -> (bytes, bytes):
