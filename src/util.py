@@ -1,6 +1,6 @@
-import struct
-import datetime as dt
 from datetime import datetime, date, timedelta
+import struct
+import socket
 
 
 class Util():
@@ -33,17 +33,17 @@ class Util():
                 package[i] = bytes(package[i], encoding="ascii")
         header = package[0]
         format_s = None
-        if header == b'O':
+        if header == b'O': # Place Order
             format_s = "!cI10scII4sIIIccIcc"
             package[7] = int(package[7]*10) # Convert decimal price to integer
         elif header == b'U':
-            if len(package) == 14:
-                package[8] = int(package[8]*10) # Convert decimal price to integer
+            if len(package) == 14: # Order Replacecd
+                package[7] = int(package[7]*10) # Convert decimal price to integer
                 format_s = "!cQIcII4sIIcQIcI"
-            else:
+            else: # Replace Order
                 package[4] = int(package[4]*10) # Convert decimal price to integer
                 format_s = "!cIIIIIcI"
-        elif header == b'X':
+        elif header == b'X': # Cancel Order
             format_s = "!cII"
         elif header == b"S": # Server event
             format_s = "!cQc" 
@@ -162,9 +162,6 @@ class Util():
             "time_in_force",
             "display",
             "order_number",
-            "time_in_force",
-            "display",
-            "order_number",
             "minimum_quantity",
             "order_state",
             "previous_order_token"
@@ -193,7 +190,7 @@ class Util():
             "order_rejected_reason"
         )
         format_s = "!QIc"
-        msg_dict = Util._unpackage(names, body, format_s, 'S')
+        msg_dict = Util._unpackage(names, body, format_s, 'J')
         return msg_dict
     
     @staticmethod
@@ -254,3 +251,12 @@ class Util():
                 msg_dict[key] = " "
         
         return msg_dict
+    
+    @staticmethod
+    def unsigned_int(n: int):
+        return n % 2**32 if n >= 0 else n + 2**32
+
+    @staticmethod
+    def get_port() -> int:
+        port = 61000
+        return port

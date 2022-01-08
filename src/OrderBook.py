@@ -1,7 +1,7 @@
-from util import Util
-import json
 import time
 import pprint
+
+from src.util import Util
 
 class OrderBook:
     PRICE_MAX = 214748364.6
@@ -21,11 +21,13 @@ class OrderBook:
         # dict:{latest order_id: first order_id}
         self.order_id_aliases = {}
 
+        self.active_order_ids = []
+
         self.debug_cycle = 1
     
     def debug(self):
         names = ("Order Book: ", "Tokens Used: ", "Order Hashmap: ", "Order ID Aliases: ")
-        books = (self.order_book, self.tokens_used, self.order_hashmap, self.order_id_aliases)
+        books = (self.order_book, self.tokens_used, self.order_hashmap, self.order_id_aliases, self.active_order_ids)
         time.sleep(1)
         print(f"-----------------DEBUG CYCLE {self.debug_cycle}------------------")
         for i in range(len(names)):
@@ -42,7 +44,7 @@ class OrderBook:
         self.debug_cycle += 1
 
     def get_book(self) -> dict:
-        return self.order_book
+        return self.order_book.copy() 
 
     def handle_order(self, client_id: int, msg: dict): # -> (bool, dict):
         success, outbound = self._validate_order(client_id, msg)
@@ -81,7 +83,7 @@ class OrderBook:
         exst_token = msg["existing_order_token"]
         repl_token = msg["replacement_order_token"]
         exst_order_id = self._get_order_id(client_id, exst_token)
-        if not exst_order_id in self.order_id_aliases.keys():
+        if not exst_order_id in self.active_order_ids:
             return False, []
         else:
             greatest_token = self.tokens_used[client_id][-1]
@@ -92,8 +94,7 @@ class OrderBook:
     
     def _validate_cancel_order(self, client_id: int, msg: dict): # -> (bool, list):
         order_id = self._get_order_id(client_id, msg["order_token"])
-        if not client_id in self.tokens_used.keys() or \
-                not order_id in self.order_id_aliases.keys():
+        if not order_id in self.active_order_ids:
             return False, []
         else:
             return True, None
@@ -117,15 +118,20 @@ class OrderBook:
             self.order_book[price] = []
 
         token = msg["order_token"]
+        order_id = self._get_order_id(client_id, token)
         order = self._build_order(client_id, msg)
+
         order_state = "D" if msg["time_in_force"] == 0 else "L"
         if order_state != "D":
             self.order_book[price].append(order)
-
-        order_id = self._get_order_id(client_id, token)
+            self.active_order_ids.append(order_id)
         self.order_hashmap[order_id] = order
         self.order_id_aliases[order_id] = order_id
         self.tokens_used[client_id].append(token)
+
+        # Remove level if empty
+        if len(self.order_book[price]) == 0:
+            self.order_book.pop(price)
 
         # Create outbound message
         msg["price"] = int(price*10)
@@ -163,6 +169,8 @@ class OrderBook:
 
         orig_order_id = self.order_id_aliases.pop(exst_order_id)
         self.order_id_aliases[repl_order_id] = orig_order_id
+        self.active_order_ids.remove(exst_order_id)
+        self.active_order_ids.append(repl_order_id)
 
         price = msg["price"]
         order = self.order_hashmap[orig_order_id]
@@ -175,8 +183,13 @@ class OrderBook:
         order_state = "D" if order[2] == 0 else "L"
         if order_state == "D":
             self.order_book[price].remove(order)
+            self.active_order_ids.remove(repl_order_id)
 
         self.tokens_used[client_id].append(repl_token)
+
+        # Remove level if empty
+        if len(self.order_book[price]) == 0:
+            self.order_book.pop(price)
 
         # Create outbound message
         msg["price"] = int(price*10)
@@ -204,7 +217,9 @@ class OrderBook:
         orig_order_id = self.order_id_aliases[curr_order_id]
         order = self.order_hashmap[orig_order_id]
         price = order[1]
+
         self.order_book[price].remove(order)
+        self.active_order_ids.remove(curr_order_id)
         if len(self.order_book[price]) == 0:
             self.order_book.pop(price)
 

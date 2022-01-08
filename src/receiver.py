@@ -21,9 +21,9 @@ with the exchange.
 import socket
 import threading
 from queue import Queue
+import pprint
 
-# global variable: address + port
-defaultAddress = ('localhost', 1007)
+from src.util import Util
 
 class Receiver():
 
@@ -40,6 +40,8 @@ class Receiver():
         b'E' : 29,  # EXECUTED
         b'J' : 13,  # REJECTED
     }
+
+    DEFAULT_ADDRESS = ('localhost', Util.get_port())
 
     def __init__(self):
         """
@@ -61,6 +63,9 @@ class Receiver():
         self.client_dict_lock = threading.Lock()
         self.client_no = 0
 
+        self.message_log_lock = threading.Lock()
+        self.message_log = []
+
         # List of client Thread objects.
         self.threads = []
         self.thread_lock = threading.Lock()
@@ -72,14 +77,6 @@ class Receiver():
             daemon = True
         )
         self.daemon_listener.start()
-
-    def __enter__ (self) -> None:
-        """
-        enter: (*address, *port)
-        """
-        # Prepare!.. t h e   s o c k
-        self._setup_socket()
-        self.connection, self.client = self.socket.accept()
     
     def send_message(self, client_id: int, msg: bytes):
         """
@@ -91,27 +88,37 @@ class Receiver():
                 raise ValueError(f"Message {msg} has invalid length {len(msg)}")
         else:
             raise ValueError(f"Sending message with invalid header '{header}'")
+        self.client_dict_lock.acquire()
         self.client_dict[client_id].send(msg)
+        self.client_dict_lock.release()
 
     def get_queue(self) -> Queue:
         """Returns the message queue."""
         return self.queue
-
-    def get_clients(self) -> dict:
-        """Returns the dictionary hashing client_id to their respective socket."""
-        return self.client_dict.values()
+    
+    def print_log(self):
+        self.message_log_lock.acquire()
+        print("-----------")
+        print("Message Log")
+        print("-----------")
+        pprint.pprint(self.message_log)
+        self.message_log_lock.release()
+        print("Address: " + str(self.DEFAULT_ADDRESS))
 
     def terminate(self):
         """Close all threads and shut down receiver."""
+        self.client_dict_lock.acquire()
+        for conn in self.client_dict.values():
+            conn.close()
+        self.client_dict_lock.release()
         self.thread_lock.acquire()
         for thread in self.threads:
             thread.join()
         self.thread_lock.release()
-        self.daemon_listener.join()
     
     def _setup_socket(self):
         """Bind socket and listen for connections."""
-        self.socket.bind(defaultAddress)
+        self.socket.bind(self.DEFAULT_ADDRESS)
         self.socket.listen(100)
 
     def _receive_connections_thread(self):
@@ -126,7 +133,11 @@ class Receiver():
         """
         connection, addr = self.socket.accept()
         client_id = hash((addr, self.client_no))
+
+        self.client_dict_lock.acquire()
         self.client_dict[client_id] = connection
+        self.client_dict_lock.release()
+
         self.queue.put({
             "type": "C",
             "id": client_id
@@ -137,9 +148,11 @@ class Receiver():
             daemon = True
         )
         client.start()
+
         self.thread_lock.acquire()
         self.threads.append(client)
         self.thread_lock.release()
+
         self.client_no += 1
 
     def _handle_client(self, connection, client_id):
@@ -158,6 +171,9 @@ class Receiver():
                         "header": header,
                         "body": body
                     })
+                    self.message_log_lock.acquire()
+                    self.message_log.append(["id: " + str(client_id), header + body])
+                    self.message_log_lock.release()
             except Exception:
                 print(f"Connection of client_id {client_id} dropped.")
                 break
@@ -182,7 +198,3 @@ class Receiver():
 
         # output
         return header, body
-
-    def __exit__ (self):
-        """Closes connection when out of scope."""
-        self.connection.close()

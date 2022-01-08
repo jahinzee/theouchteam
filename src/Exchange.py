@@ -7,19 +7,18 @@ as new components are added. This is mostly for knowing what we have to implemen
 """
 import threading
 import time
-import json
 
-from OrderBook import OrderBook
-from receiver import Receiver
-from util import Util
-from console import Console
+from src.orderbook import OrderBook
+from src.receiver import Receiver
+from src.util import Util
+from src.console import Console
 
 
 class Exchange():
     PRICE_MAX = 214748364.6
     QUANTITY_MAX = 2147483647 
 
-    def __init__(self):
+    def __init__(self, debug=False):
         """
         An instance of this class should be initialised before trying to establish a connection using client.py.
         All program components are integrated together with this class, connecting the 
@@ -34,10 +33,14 @@ class Exchange():
         self.msg_queue = self.connection_manager.get_queue()
 
         # Orderbook
+        self.orderbook_lock = threading.Lock()
         self.orderbook = OrderBook()
 
         # Outputting orderbook once per second, change to silent-mode later.
-        self.print_dict = threading.Event()
+        self.debug = debug
+        if self.debug:
+            self.print_dict = threading.Event()
+
         self.printer = threading.Thread(name="printer", target=lambda: self._print_orderbook_thread(), daemon=True)
         self.printer.start()
 
@@ -51,15 +54,7 @@ class Exchange():
     def close_exchange(self):
         """Close the exchange and prevent clients from place orders."""
         self.open = False
-    
-    def print_orderbook(self):
-        """Prints the Orderbook to the console in a nice format."""
-        Console(loadfrom=self.orderbook.get_book()).print()
-        """
-        self.print_dict.clear()
-        self.orderbook.debug()
-        self.print_dict.wait()
-        """
+        self.connection_manager.terminate()
     
     def _operate(self):
         """
@@ -105,7 +100,9 @@ class Exchange():
                 
                 # Pass valid order into the orderbook
                 if valid:
+                    self.orderbook_lock.acquire()
                     success, outbound = self.orderbook.handle_order(client_id, content)
+                    self.orderbook_lock.release()
 
                 if len(outbound) == 0: 
                     self.print_dict.set()
@@ -113,8 +110,8 @@ class Exchange():
 
                 # Send outbound message back to client.
                 self.connection_manager.send_message(client_id, Util.package(outbound))
-            self.print_dict.set()
-                
+            if self.debug:
+                self.print_dict.set()
 
     def _validate_order_syntax(self, content: dict, client_id: int): # -> (bool, list):
         """
@@ -180,8 +177,27 @@ class Exchange():
         """Threading wrapper for print_orderbook which outputs once every second."""
         while True:
             time.sleep(1)
-            self.print_orderbook()
+            if self.debug:
+                self._print_orderbook_debug()
+            else:
+                self._print_orderbook()
 
-if __name__ == "__main__":
-    Exchange()
-    input()
+    def _print_orderbook(self):
+        """Prints the Orderbook to the console in a nice format."""
+        if self.debug:
+            raise Exception("Normal printing when should be debugging")
+        self.orderbook_lock.acquire()
+        Console(loadfrom=self.orderbook.get_book()).print()
+        self.orderbook_lock.release()
+    
+    def _print_orderbook_debug(self):
+        """Prints the Orderbook to the console in a nice format."""
+        if not self.debug:
+            raise Exception("Debug printing when not in debugging mode")
+        self.print_dict.clear()
+        self.orderbook_lock.acquire()
+        Console(loadfrom=self.orderbook.get_book()).print()
+        self.orderbook.debug()
+        self.connection_manager.print_log()
+        self.orderbook_lock.release()
+        self.print_dict.wait()

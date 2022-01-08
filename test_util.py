@@ -1,6 +1,6 @@
-
 import json
-from util import Util
+
+from src.util import Util
 
 # Testing inputs
 if __name__ == "__main__":

@@ -5,7 +5,7 @@ import requests
 import threading
 import time
 import json
-from client import Client
+from src.client import Client
 
 app = Flask(__name__)
 app.secret_key = "abcdefgh"
@@ -93,8 +93,8 @@ def testing():
 
 
 if __name__ == '__main__':
-    a = threading.Thread(target = app.run)
-    b = threading.Thread(target = testing)
+    a = threading.Thread(target = app.run, daemon=True)
+    b = threading.Thread(target = testing, daemon=True)
     a.start()
     b.start()
-    print('hi')
+    print("Press enter to exit.")

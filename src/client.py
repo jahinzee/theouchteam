@@ -5,16 +5,12 @@ Client
 
 Client for connecting to the receiver.
 """
-import sys
 import socket
 import threading
 from queue import Queue
 import json
 
-from util import Util
-
-# global variable: address + port
-defaultAddress = ('localhost', 1007)
+from src.util import Util
 
 class Client():
     """
@@ -40,11 +36,8 @@ class Client():
         b'E' : 29,  # EXECUTED
         b'J' : 13,  # REJECTED
     }
-    
-    def __enter__(self) -> None:
-        """enter:"""
-        # Prepare!.. t h e   s o c k   I I
-        self.socket = self._connect()
+
+    DEFAULT_ADDRESS = ('localhost', Util.get_port())
     
     def user_input(self):
         pass
@@ -77,12 +70,20 @@ class Client():
                 data = json.load(json_f)
                 for action in data["actions"]:
                     actions.append(list(action.values()))
+        # Convert all input numbers into unsigned 4-byte integers.
+        for action in actions:
+            for i in range(len(action)):
+                if isinstance(action[i], int):
+                    action[i] = Util.unsigned_int(action[i])
+
         while True:
             try:
                 if len(actions) == 0:
+                    return
                     package = self.user_input()
                 else:
                     action = actions.pop(0)
+                    print("Sending: " + str(action))
                     package = Util.package(action)
                 self._sendBytestream(package[0:1], package[1:])
                 input()
@@ -94,8 +95,6 @@ class Client():
                 print("Server Disconnected")
                 break
     
-
-    
     def _listen_thread(self):
         while not self.terminated.is_set():
             self._listen()
@@ -104,7 +103,7 @@ class Client():
     def _listen(self):
         header, body = self._receive_bytes()
         msg_dict = Util.unpackage(header, body)
-        print(json.dumps(
+        print("Exchange: " + json.dumps(
             msg_dict,
             indent = 4,
             separators = (",", ": ")
@@ -149,16 +148,6 @@ class Client():
         self.socket.sendall(msg)
 
     def _connect(self):
-        self.socket = socket.create_connection(defaultAddress)
+        print("Connecting on address " + str(self.DEFAULT_ADDRESS))
+        self.socket = socket.create_connection(self.DEFAULT_ADDRESS)
         return self.socket
-    
-    def __exit__ (self):
-        """closes connection when out of scope"""
-        self.socket.close()
-
-if __name__ == "__main__":
-    if len(sys.argv) == 2:
-        orderlist_path = sys.argv[1]
-    else:
-        orderlist_path = None
-    Client(path=orderlist_path)
