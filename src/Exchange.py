@@ -38,8 +38,7 @@ class Exchange():
 
         # Outputting orderbook once per second, change to silent-mode later.
         self.debug = debug
-        if self.debug:
-            self.print_dict = threading.Event()
+        self.print_dict = threading.Event()
 
         self.printer = threading.Thread(name="printer", target=lambda: self._print_orderbook_thread(), daemon=True)
         self.printer.start()

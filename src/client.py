@@ -107,7 +107,7 @@ class Client():
             msg_dict,
             indent = 4,
             separators = (",", ": ")
-        ))
+        ) + "\n")
 
     def _receive_bytes(self):
         # Store header byte
