@@ -102,6 +102,10 @@ a:hover{
   width: 100%;
 }
 
+.submit-order{
+  vertical-align: middle;
+  colour: blue!important;
+}
 
 .nav li{
   margin-left:20px;
