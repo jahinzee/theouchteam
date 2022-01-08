@@ -1,6 +1,6 @@
 import sys
 
-from src.exchange import Exchange
+from src.Exchange import Exchange
 
 if __name__ == "__main__":
     exchange = None

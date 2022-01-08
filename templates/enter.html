@@ -4,21 +4,6 @@
 
 {%  block page_content %}
      <section class="body-page-wrapper">
-        <div class="body-content-wrapper">
-             <div class="body-heading">
-                 <h1 class = "body-header"> Order Book </h1>
-             </div>
-             <hr>
-            <div id = "order-content">
-                {% for key, value in order_book.items() %}
-                    {% for order in value %}
-                        <div class = "order-row">
-                            {{order}}
-                        </div>
-                    {% endfor %}
-               {% endfor %}
-            </div>
-        </div>
 
 
         <div class="body-content-wrapper">
@@ -32,39 +17,39 @@
                     {{ form.hidden_tag() }}
                     <p>
                         {{ form.message_type.label }}
-                        {{ form.message_type(size=40, class='select-box', value = O)}}
+                        {{ form.message_type(size=40, class='select-box', value = "O")}}
                     </p>
                     <p>
                         {{ form.order_token.label }}
-                        {{ form.order_token(size=40, placeholder = '0', class='select-box',value = 0)}}
+                        {{ form.order_token(size=40, placeholder = '0', class='select-box',value = 1)}}
                     </p>
                     <p>
                         {{ form.client_reference.label }}
-                        {{ form.client_reference(size=40, placeholder = '0', class='select-box',value = 0)}}
+                        {{ form.client_reference(size=40, placeholder = '0', class='select-box',value = "Lenny    ")}}
                     </p>
                     <p>
                         {{ form.indicator.label }}
-                        {{ form.indicator(size=40, placeholder = '0', class='select-box',value = 0)}}
+                        {{ form.indicator(size=40, placeholder = '0', class='select-box',value = "B")}}
                     </p>
                     <p>
                         {{ form.quantity.label }}
-                        {{ form.quantity(size=40, placeholder = '0', class='select-box',value = 0)}}
+                        {{ form.quantity(size=40, placeholder = '0', class='select-box',value = 100)}}
                     </p>
                     <p>
                         {{ form.orderbook_id.label }}
-                        {{ form.orderbook_id(size=40, placeholder = '0', class='select-box', value = 0)}}
+                        {{ form.orderbook_id(size=40, placeholder = '0', class='select-box', value = 1)}}
                     </p>
                     <p>
                         {{ form.group.label }}
-                        {{ form.group(size=40, placeholder = '0', class='select-box', value = 0)}}
+                        {{ form.group(size=40, placeholder = '0', class='select-box', value = "DAY")}}
                     </p>
                     <p>
                         {{ form.price.label }}
-                        {{ form.price(size=40, placeholder = '0', class='select-box', value = 0)}}
+                        {{ form.price(size=40, placeholder = '0', class='select-box', value = 2300)}}
                     </p>
                     <p>
                         {{ form.time_in_force.label }}
-                        {{ form.time_in_force(size=40, placeholder = '0', class='select-box', value = 0)}}
+                        {{ form.time_in_force(size=40, placeholder = '0', class='select-box', value = 99999)}}
                     </p>
                     <p>
                         {{ form.time_in_force.label }}
@@ -76,11 +61,11 @@
                     </p>
                     <p>
                         {{ form.display.label }}
-                        {{ form.display(size=40, placeholder = '0', class='select-box', value = 0)}}
+                        {{ form.display(size=40, placeholder = '0', class='select-box', value = "P")}}
                     </p>
                     <p>
                         {{ form.capacity.label }}
-                        {{ form.capacity(size=40, placeholder = '0', class='select-box', value = 0)}}
+                        {{ form.capacity(size=40, placeholder = '0', class='select-box', value = "P")}}
                     </p>
                     <p>
                         {{ form.minimum_quantity.label }}
@@ -88,11 +73,11 @@
                     </p>
                     <p>
                         {{ form.order_classification.label }}
-                        {{ form.order_classification(size=40, placeholder = '0', class='select-box', value = 0)}}
+                        {{ form.order_classification(size=40, placeholder = '0', class='select-box', value = "1")}}
                     </p>
                     <p>
                         {{ form.cash_margin_type.label }}
-                        {{ form.cash_margin_type(size=40, placeholder = '0', class='select-box', value = 0)}}
+                        {{ form.cash_margin_type(size=40, placeholder = '0', class='select-box', value = "1")}}
                     </p>
 
                     <p>

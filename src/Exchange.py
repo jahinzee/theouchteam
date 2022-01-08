@@ -8,7 +8,7 @@ as new components are added. This is mostly for knowing what we have to implemen
 import threading
 import time
 
-from src.orderbook import OrderBook
+from src.OrderBook import OrderBook
 from src.receiver import Receiver
 from src.util import Util
 from src.console import Console

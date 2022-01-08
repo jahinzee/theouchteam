@@ -1,0 +1,25 @@
+{%  extends 'base.html' %}
+
+{%  block page_content %}
+ <section class="body-page-wrapper">
+
+
+        <div class="body-content-wrapper">
+            <div class="body-heading">
+                <h1 class="body-header"> Enter Order</h1>
+            </div>
+            <hr>
+
+            <div id="setting-content">
+                <form action="" method="POST" id="form" novalidate>
+                    {{ form.hidden_tag() }}
+                    <p class="submit-order">
+                        {{ form.submit()}}
+                    </p>
+
+                </form>
+
+            </div>
+        </div>
+ </section>
+{%  endblock %}

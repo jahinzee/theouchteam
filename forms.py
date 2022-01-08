@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, PasswordField,IntegerField, SelectField
-from wtforms.validators import DataRequired, InputRequired, Length, Email
+from wtforms import StringField, SubmitField,IntegerField
+from wtforms.validators import InputRequired
 
 
 class Enter_Order(FlaskForm):
@@ -38,4 +38,5 @@ class Cancel_Order(FlaskForm):
     quantity = IntegerField('Quantity', validators=[])
     submit = SubmitField('Submit')
 
-
+class Submit_Order(FlaskForm):
+    submit = SubmitField('Submit your Order')
