@@ -1,0 +1,57 @@
+{%  extends 'base.html' %}
+
+{%  block page_title %} Home {%  endblock %}
+
+{%  block page_content %}
+     <section class="body-page-wrapper">
+
+         <div class="body-content-wrapper">
+             <div class="body-heading">
+                 <h1 class = "body-header"> Order Book </h1>
+             </div>
+             <hr>
+            <div id = "order-content">
+                {% for key, value in order_book.items() %}
+                    {% for order in value %}
+                        <div class = "order-row">
+                            {{order}}
+                        </div>
+                    {% endfor %}
+               {% endfor %}
+            </div>
+        </div>
+
+        <div class="body-content-wrapper">
+            <div class="body-heading">
+                <h1 class="body-header"> Enter Order</h1>
+            </div>
+            <hr>
+
+            <div id="setting-content">
+                <form action="" method="POST" id="form" novalidate>
+                    {{ form.hidden_tag() }}
+                    <p>
+                        {{ form.message_type.label }}
+                        {{ form.message_type(size=40, class='select-box', value = 0)}}
+                    </p>
+                    <p>
+                        {{ form.order_token.label }}
+                        {{ form.order_token(size=40, placeholder = '0', class='select-box',value = 0)}}
+                    </p>
+                    <p>
+                        {{ form.quantity.label }}
+                        {{ form.quantity(size=40, placeholder = '0', class='select-box',value = 0)}}
+                    </p>
+
+                    <p>
+                        {{ form.submit()}}
+                    </p>
+
+                </form>
+
+            </div>
+        </div>
+    </section>
+
+
+{%  endblock %}
