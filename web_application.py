@@ -7,10 +7,8 @@ import json
 from src.client import Client
 
 app = Flask(__name__)
-app.secret_key = "abcdefgh"
+app.secret_key = "adkljrhLKJFHELJKFh"
 bootstrap = Bootstrap(app)
-
-mything = 5
 
 order_number_index = 1
 
@@ -28,6 +26,7 @@ def send():
     outbound = {
         'actions': normalisedList
     }
+
     with open('test_inputs/client_100.json', 'w') as fp:
         json.dump(outbound, fp)
 
@@ -52,6 +51,7 @@ def normalise_enter(form_info):
         'order_classification': str(form_info['order_classification']),
         'cash_margin_type': str(form_info['cash_margin_type'])
     }
+
     normalisedList.append(normalised)
 
 
@@ -67,6 +67,7 @@ def normalised_replace(form_info):
         'display': str(form_info['display']),
         'minimum_quantity': int(form_info['minimum_quantity']),
     }
+
     normalisedList.append(normalised)
 
 
@@ -77,6 +78,7 @@ def normalised_cancel(form_info):
         'order_token': int(form_info['order_token']),
         'quantity': int(form_info['quantity']),
     }
+
     normalisedList.append(normalised)
 
 
@@ -120,10 +122,6 @@ def cancel_order_page():
 def dashboard():
     print("hello")
     return render_template('dashboard.html')
-
-
-def testing():
-    pass
 
 
 if __name__ == '__main__':
