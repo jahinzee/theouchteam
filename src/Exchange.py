@@ -18,7 +18,7 @@ class Exchange():
     PRICE_MAX = 214748364.6
     QUANTITY_MAX = 2147483647 
 
-    def __init__(self, debug=False):
+    def __init__(self, debug="default"):
         """
         An instance of this class should be initialised before trying to establish a connection using client.py.
         All program components are integrated together with this class, connecting the 
@@ -116,7 +116,7 @@ class Exchange():
                     else:
                         outbound[4] = cancel_repl_reason
                 self.connection_manager.send_message(client_id, Util.package(outbound))
-            if self.debug:
+            if self.debug == "debug":
                 self.print_dict.set()
 
     def _validate_order_syntax(self, content: dict, client_id: int): # -> (bool, list):
@@ -184,26 +184,32 @@ class Exchange():
         """Threading wrapper for print_orderbook which outputs once every second."""
         while True:
             time.sleep(1)
-            if self.debug:
+            if self.debug == "debug":
                 self._print_orderbook_debug()
-            else:
+            elif self.debug == "none":
+                pass
+            elif self.debug == "default":
                 self._print_orderbook()
+            else:
+                raise Exception(f"Output mode {self.debug} not defined.")
 
     def _print_orderbook(self):
         """Prints the Orderbook to the console in a nice format."""
-        if self.debug:
+        if self.debug == "none":
             raise Exception("Normal printing when should be debugging")
         self.orderbook_lock.acquire()
         Console(loadfrom=self.orderbook.get_book()).print()
+        self.connection_manager.print_connections()
         self.orderbook_lock.release()
     
     def _print_orderbook_debug(self):
         """Prints the Orderbook to the console in a nice format."""
-        if not self.debug:
+        if not self.debug == "debug":
             raise Exception("Debug printing when not in debugging mode")
         self.print_dict.clear()
         self.orderbook_lock.acquire()
         Console(loadfrom=self.orderbook.get_book()).print()
+        self.connection_manager.print_connections()
         self.orderbook.debug()
         self.connection_manager.print_log()
         self.orderbook_lock.release()

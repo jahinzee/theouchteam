@@ -175,22 +175,29 @@ class OrderBook:
 
         price = msg["price"]
         order = self.order_hashmap[orig_order_id]
+        old_price = order[1]
         order[1] = price
         order[2] = msg["quantity"]
         order[4] = msg["time_in_force"]
         order[5] = Util.get_server_time()
         order[7] = repl_token
 
+        # If order is dead
+        self.order_book[old_price].remove(order)
         order_state = "D" if order[2] == 0 else "L"
-        if order_state == "D":
-            self.order_book[price].remove(order)
+        if order_state != "D":
+            # Create new price level if price is new
+            if not price in self.order_book.keys():
+                self.order_book[price] = [order]
+        else:
             self.active_order_ids.remove(repl_order_id)
+
 
         self.tokens_used[client_id].append(repl_token)
 
         # Remove level if empty
-        if len(self.order_book[price]) == 0:
-            self.order_book.pop(price)
+        if len(self.order_book[old_price]) == 0:
+            self.order_book.pop(old_price)
 
         # Create outbound message
         msg["price"] = int(price*10)
