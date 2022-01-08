@@ -4,3 +4,6 @@ src/__pycache__/console.cpython-310.pyc
 src/__pycache__/receiver.cpython-310.pyc
 src/__pycache__/util.cpython-310.pyc
 src/__pycache__/OrderBook.cpython-310.pyc
+src/__pycache__/__init__.cpython-310.pyc
+src/__pycache__/Exchange.cpython-310.pyc
+src/__pycache__/client.cpython-310.pyc
