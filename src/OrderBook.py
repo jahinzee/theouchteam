@@ -220,3 +220,60 @@ class OrderBook:
 
     def _get_order_id(self, client_id: int, order_token: int):
         return abs(hash((client_id, order_token))) % 2**32
+
+    def test(self):
+        testing = [[{
+            'message_type': 'O',
+            'order_token': 0,
+            'client_reference': 'abcdefghij',
+            'buy_sell_indicator': 'B',
+            'quantity': 200,
+            'orderbook_id': 3,
+            'group': "DAY",
+            'price': 323.4,
+            'time_in_force': 100,
+            'firm_id': '3434',
+            'display': "P",
+            'capacity': 'A',
+            'minimum_quantity': 5,
+            'order_classification': '1',
+            'cash_margin_type': '3'
+        }, 0], [{
+            'message_type': 'U',
+            'existing_order_token': 0,
+            'replacement_order_token': 2,
+            'quantity': 5000,
+            'price': 323.4,
+            'time_in_force': 100,
+            'display': 'P',
+            'minimum_quantity': 23
+        }, 0], [{
+            'message_type': 'X',
+            'order_token': 2,
+            'quantity': -10
+        }, 1], [{
+            'message_type': 'O',
+            'order_token': 3,
+            'client_reference': 'abcdefghij',
+            'buy_sell_indicator': 'B',
+            'quantity': 200,
+            'orderbook_id': 3,
+            'group': "DAY",
+            'price': 323.4,
+            'time_in_force': 100,
+            'firm_id': '3434',
+            'display': "P",
+            'capacity': 'A',
+            'minimum_quantity': 5,
+            'order_classification': '1',
+            'cash_margin_type': '3'
+        }, 0]
+        ]
+
+        for res in testing:
+            success, outbound = self.handle_order(res[1], res[0])
+            print("--------")
+            print( outbound)
+            print("--------")
+
+
