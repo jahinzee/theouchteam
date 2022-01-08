@@ -1,5 +1,6 @@
 import time
 import pprint
+import copy
 
 from src.util import Util
 
@@ -44,7 +45,7 @@ class OrderBook:
         self.debug_cycle += 1
 
     def get_book(self) -> dict:
-        return self.order_book.copy() 
+        return copy.deepcopy(self.order_book)
 
     def handle_order(self, client_id: int, msg: dict): # -> (bool, dict):
         success, outbound = self._validate_order(client_id, msg)
@@ -121,7 +122,7 @@ class OrderBook:
         order_id = self._get_order_id(client_id, token)
         order = self._build_order(client_id, msg)
 
-        order_state = "D" if msg["time_in_force"] == 0 else "L"
+        order_state = "D" if msg["time_in_force"] == 0 or msg["quantity"] == 0 else "L"
         if order_state != "D":
             self.order_book[price].append(order)
             self.active_order_ids.append(order_id)

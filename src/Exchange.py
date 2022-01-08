@@ -85,8 +85,9 @@ class Exchange():
                 valid, outbound = self._validate_order_syntax(content, client_id)
 
                 msg_type = content["message_type"]
+                cancel_repl_reason = None
                 if not valid:
-                    # If a replacement order is not valid and the original order token is in use, cancel the order.
+                    # If a replacement order is not valid, cancel the order.
                     if msg_type == 'U':
                         # Section 6.3
                         msg_type == "X"
@@ -96,6 +97,7 @@ class Exchange():
                             "quantity": content["quantity"]
                         }
                         valid = True
+                        cancel_repl_reason = outbound[0] # Remember order cancelled reason
                 
                 # Pass valid order into the orderbook
                 if valid:
@@ -108,6 +110,11 @@ class Exchange():
                     continue
 
                 # Send outbound message back to client.
+                if cancel_repl_reason != None:
+                    if len(outbound) != 5:
+                        raise ValueError("Expected cancel message but was not the same length.")
+                    else:
+                        outbound[4] = cancel_repl_reason
                 self.connection_manager.send_message(client_id, Util.package(outbound))
             if self.debug:
                 self.print_dict.set()
@@ -130,7 +137,7 @@ class Exchange():
                 err_code = "S"
             elif content["price"] > self.PRICE_MAX:
                 err_code = "X"
-            elif content["quantity"] > self.QUANTITY_MAX:
+            elif content["quantity"] > self.QUANTITY_MAX or content["quantity"] <= 0:
                 err_code = "Z"
             elif content["minimum_quantity"] > 0 and content["time_in_force"] != 0:
                 err_code = "N"
@@ -159,6 +166,7 @@ class Exchange():
                 err_code = "D"
             else:
                 return True, outbound
+            outbound = [err_code]
             return False, outbound
         elif msg_type == 'X':
             return True, outbound

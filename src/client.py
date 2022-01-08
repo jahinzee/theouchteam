@@ -78,6 +78,7 @@ class Client():
 
         while True:
             try:
+                input()
                 if len(actions) == 0:
                     return
                     package = self.user_input()
@@ -86,7 +87,9 @@ class Client():
                     print("Sending: " + str(action))
                     package = Util.package(action)
                 self._sendBytestream(package[0:1], package[1:])
-                input()
+                print("Package Sent.")
+                if len(actions) != 0:
+                    print("Next Package: " + str(actions[0]))
             except KeyboardInterrupt:
                 self.terminated.set()
                 print("Client Main Thread Interrupted")
