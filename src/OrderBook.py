@@ -143,15 +143,16 @@ class OrderBook:
 
     def _build_order(self, client_id: int, msg: dict):
         token = msg["order_token"]
-        order = []
-        order.append(msg["buy_sell_indicator"])
-        order.append(msg["price"])
-        order.append(msg["quantity"])
-        order.append(msg["orderbook_id"])
-        order.append(msg["time_in_force"])
-        order.append(Util.get_server_time())
-        order.append(self._get_order_id(client_id, token))
-        order.append(token)
+        order = [
+            msg["buy_sell_indicator"],
+            msg["price"],
+            msg["quantity"],
+            msg["orderbook_id"],
+            msg["time_in_force"],
+            Util.get_server_time(),
+            self._get_order_id(client_id,token),
+            token
+        ]
         return order
 
     def _process_replace_order(self, client_id: int, msg: dict) -> list:
