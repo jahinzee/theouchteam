@@ -18,7 +18,7 @@ from src.util import Util
 class Console:
 
     # class constant: default cmd window size (for supported platforms)
-    WINDOW_SIZE = [150, 50]
+    WINDOW_SIZE = [122, 50]
 
     # class constants: helper vars
     TAB = '\t'
@@ -141,7 +141,7 @@ class Console:
         for order in singleTable:
 
             # Process symbol
-            order[3] = self.SYMBOLS[order[3]]
+            order[3] = self.SYMBOLS[str(order[3])]
 
         
         # Clear and resize cmd/terminal window
