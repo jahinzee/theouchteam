@@ -42,7 +42,7 @@ class Receiver():
         b'J' : 13,  # REJECTED
     }
 
-    DEFAULT_ADDRESS = (socket.gethostname(), Util.get_port())
+    DEFAULT_ADDRESS = (socket.gethostbyname(socket.gethostname()), Util.get_port())
 
     def __init__(self):
         """
