@@ -258,5 +258,9 @@ class Util():
 
     @staticmethod
     def get_port() -> int:
-        port = 61000
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.bind((socket.gethostname(), 0)) # Retrieve an ephemeral port
+        sock.listen(1)
+        port = sock.getsockname()[1]
+        sock.close()
         return port

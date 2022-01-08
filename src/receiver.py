@@ -22,6 +22,7 @@ import socket
 import threading
 from queue import Queue
 import pprint
+import configparser
 
 from src.util import Util
 
@@ -41,7 +42,7 @@ class Receiver():
         b'J' : 13,  # REJECTED
     }
 
-    DEFAULT_ADDRESS = ('localhost', Util.get_port())
+    DEFAULT_ADDRESS = (socket.gethostname(), Util.get_port())
 
     def __init__(self):
         """
@@ -59,19 +60,25 @@ class Receiver():
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._setup_socket()
 
+        # {client_id: socket}
         self.client_dict = {}
         self.client_dict_lock = threading.Lock()
         self.client_no = 0
 
+        # List of all messages received by the server socket in sequence - for debugging.
         self.message_log_lock = threading.Lock()
         self.message_log = []
 
+        # List of connections and disconnections - for debugging.
         self.connection_log_lock = threading.Lock()
         self.connection_log = []
 
         # List of client Thread objects.
         self.threads = []
         self.thread_lock = threading.Lock()
+
+        # Dump server host and port into config file.
+        self._dump_address()
 
         # Daemon thread which listens for and accepts connections.
         self.daemon_listener = threading.Thread( 
@@ -100,6 +107,7 @@ class Receiver():
         return self.queue
     
     def print_log(self):
+        """Prints the sequence of messages received by the server."""
         self.message_log_lock.acquire()
         print("-----------")
         print("Message Log")
@@ -109,6 +117,7 @@ class Receiver():
         print("Address: " + str(self.DEFAULT_ADDRESS))
     
     def print_connections(self):
+        """Prints the log of connections to and disconnections from the server."""
         self.connection_log_lock.acquire()
         print("--------------")
         print("Connection Log")
@@ -132,6 +141,20 @@ class Receiver():
         """Bind socket and listen for connections."""
         self.socket.bind(self.DEFAULT_ADDRESS)
         self.socket.listen(100)
+    
+    def _dump_address(self):
+        """
+        Dumps the receiver's host and port into a config file. The host and 
+        port can be used to connect remotely. The ouch_client automatically 
+        opens and reads the config file to connect to the server.
+        """
+        config = configparser.ConfigParser()
+        config['DEFAULT'] = {
+            'host': self.DEFAULT_ADDRESS[0],
+            'port': self.DEFAULT_ADDRESS[1],
+        }
+        with open("config.ini", "w") as configfile:
+            config.write(configfile)
 
     def _receive_connections_thread(self):
         """Wrapper function for threading _receive_connections."""
