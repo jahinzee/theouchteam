@@ -111,7 +111,6 @@ class Console:
         singleTable = []
         for priceGroup in self.internalBook:
             singleTable += self.internalBook[priceGroup]
-            singleTable += ['','','','','','','','']
         
         # Clear and resize cmd/terminal window
         os.system(self.CMD_LIST["CLEAR"][sys.platform])
