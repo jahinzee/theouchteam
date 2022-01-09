@@ -10,9 +10,15 @@ See future considerations for optimisation and features below.
 Before running, the following dependencies are required:
 - tabulate
 
+If running web interface flask, flask_bootstrap, flask_wtf is required.
+
 These dependencies can be installed with pip or another package manager.
 ```
 pip install tabulate
+
+pip install flask
+pip install flask_bootstrap
+pip install flask_wtf
 ```
 
 # Usage
@@ -72,3 +78,19 @@ The JSON should be structured as follows:
 ```
 - _expected_behaviour: A list of comment strings describing the expected behaviour of the program for each corresponding action. 1.corresponds to the first action etc. This will not be used in the program, and is for documentation purposes only.
 - actions: A list of json dictionaries which follow the OUCH protocol's Section 6 (Inbound) specifications. The messages will be sent by the client to the exchange in sequence.
+
+# Web Interface
+This interface allows for easier data entry and provides a GUI that more accurately simulates how a typical client will enter order entries.
+
+```
+python web_application.py
+```
+On web browser, type http://127.0.0.1:5000/ to load website
+
+On a separate terminal/cmd instance start an instance of ouch_server.py. Sudo may be needed.
+
+```
+python ouch_server.py
+```
+
+To create your orders, continually fill in the enter order, replace order and cancel order forms. Once finished, click on the OUCH logo and click submit your order. Continually press enter on command line until and observer appropriate response messages on both terminal console.
