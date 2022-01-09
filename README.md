@@ -85,7 +85,7 @@ This interface allows for easier data entry and provides a GUI that more accurat
 ```
 python web_application.py
 ```
-On web browser, type http://127.0.0.1:5000/ to load website
+On web browser, type http://127.0.0.1:5000/ to load website.
 
 On a separate terminal/cmd instance start an instance of ouch_server.py. Sudo may be needed.
 
@@ -93,4 +93,4 @@ On a separate terminal/cmd instance start an instance of ouch_server.py. Sudo ma
 python ouch_server.py
 ```
 
-To create your orders, continually fill in the enter order, replace order and cancel order forms. Once finished, click on the OUCH logo and click submit your order. Continually press enter on command line until and observer appropriate response messages on both terminal console.
+To create your orders, continually fill in the enter order, replace order and cancel order forms. Once finished, click on the OUCH logo and click submit your order. Continually press enter on command line and observe appropriate response messages on both terminal consoles
