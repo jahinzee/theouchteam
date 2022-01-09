@@ -9,6 +9,7 @@ import socket
 import threading
 from queue import Queue
 import json
+import configparser
 
 from src.util import Util
 
@@ -37,10 +38,6 @@ class Client():
         b'J' : 13,  # REJECTED
     }
 
-    DEFAULT_ADDRESS = ('localhost', Util.get_port())
-    
-    def user_input(self):
-        pass
 
     def __init__(self, path=None):
         """
@@ -93,9 +90,11 @@ class Client():
             except KeyboardInterrupt:
                 self.terminated.set()
                 print("Client Main Thread Interrupted")
+                self.socket.close()
                 break
             except ConnectionResetError:
                 print("Server Disconnected")
+                self.socket.close()
                 break
     
     def _listen_thread(self):
@@ -151,6 +150,10 @@ class Client():
         self.socket.sendall(msg)
 
     def _connect(self):
-        print("Connecting on address " + str(self.DEFAULT_ADDRESS))
-        self.socket = socket.create_connection(self.DEFAULT_ADDRESS)
+        config = configparser.ConfigParser()
+        config.read("config.ini")
+        host = config['DEFAULT']['host']
+        port = config['DEFAULT']['port']
+        print("Connecting on address " + str((host, port)))
+        self.socket = socket.create_connection((host, port))
         return self.socket

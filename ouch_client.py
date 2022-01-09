@@ -7,5 +7,4 @@ if __name__ == "__main__":
         orderlist_path = sys.argv[1]
     else:
         orderlist_path = None
-
     Client(path=orderlist_path)
