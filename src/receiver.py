@@ -42,8 +42,6 @@ class Receiver():
         b'J' : 13,  # REJECTED
     }
 
-    DEFAULT_ADDRESS = (socket.gethostbyname(socket.gethostname()), Util.get_port())
-
     def __init__(self):
         """
         This class accepts connections from multiple clients by spawning a new thread
@@ -76,9 +74,6 @@ class Receiver():
         # List of client Thread objects.
         self.threads = []
         self.thread_lock = threading.Lock()
-
-        # Dump server host and port into config file.
-        self._dump_address()
 
         # Daemon thread which listens for and accepts connections.
         self.daemon_listener = threading.Thread( 
@@ -139,22 +134,9 @@ class Receiver():
     
     def _setup_socket(self):
         """Bind socket and listen for connections."""
-        self.socket.bind(self.DEFAULT_ADDRESS)
+        host, port = Util.get_addr()
+        self.socket.bind((host, port))
         self.socket.listen(100)
-    
-    def _dump_address(self):
-        """
-        Dumps the receiver's host and port into a config file. The host and 
-        port can be used to connect remotely. The ouch_client automatically 
-        opens and reads the config file to connect to the server.
-        """
-        config = configparser.ConfigParser()
-        config['DEFAULT'] = {
-            'host': self.DEFAULT_ADDRESS[0],
-            'port': self.DEFAULT_ADDRESS[1],
-        }
-        with open("config.ini", "w") as configfile:
-            config.write(configfile)
 
     def _receive_connections_thread(self):
         """Wrapper function for threading _receive_connections."""

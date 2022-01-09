@@ -25,6 +25,7 @@ pip install flask_wtf
 ```
 
 # Usage
+The config.ini file contains items which will be read by the ouch_server and ouch_client as the host and port used to establish a connection. The port which the application listens on can be changed by the user if a different listening address or port is desired.
 
 Start an instance of *ouch_server.py* first using python. If `debug` is passed as a command line argument, the console output will be in debugging mode as opposed to printing the orderbook once every second.
 ```

@@ -1,6 +1,6 @@
 from datetime import datetime, date, timedelta
 import struct
-import socket
+import configparser
 
 
 class Util():
@@ -257,10 +257,10 @@ class Util():
         return n % 2**32 if n >= 0 else n + 2**32
 
     @staticmethod
-    def get_port() -> int:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.bind((socket.gethostname(), 0)) # Retrieve an ephemeral port
-        sock.listen(1)
-        port = sock.getsockname()[1]
-        sock.close()
-        return port
+    def get_addr() -> int:
+        """Get socket address defined in the config file."""
+        config = configparser.ConfigParser()
+        config.read("config.ini")
+        host = config['DEFAULT']['host']
+        port = int(config['DEFAULT']['port'])
+        return host, port
