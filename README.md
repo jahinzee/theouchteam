@@ -48,6 +48,7 @@ python ouch_client.py test_inputs/client_1.json
 - Orderbook data structure optimisation using numpy or caching (such as using the **memcached** package).
 - Increase client connection thread handling performance using thread pools and connection pools.
 - Client message data processing can be made faster by setting up and integrating an Apache Pulsar cluster.
+- Increasing speed by using faster data structures and modules including Numpy
 
 ## Client Input JSON Format
 The JSON should be structured as follows:
